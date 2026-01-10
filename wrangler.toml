@@ -1,0 +1,25 @@
+name = "github-ai-agent"
+main = "src/index.ts"
+compatibility_date = "2025-01-09"
+compatibility_flags = ["nodejs_compat"]
+
+# Workflow binding
+[[workflows]]
+name = "github-issue-workflow"
+binding = "GITHUB_ISSUE_WORKFLOW"
+class_name = "GitHubIssueWorkflow"
+
+# Environment variables (non-sensitive)
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
+GITHUB_BOT_USERNAME = "cloudflare-ai-bot"
+# TARGET_REPO = "your-org/your-repo"  # Optional: restrict to specific repo
+
+# Secrets - Set these with: wrangler secret put <NAME>
+# GITHUB_TOKEN - GitHub Personal Access Token with repo:write permissions
+# GEMINI_API_KEY - Gemini API key from Google AI Studio (OpenAI-compatible endpoint)
+# GITHUB_WEBHOOK_SECRET - Optional: GitHub webhook secret for signature verification
+
+# Observability
+[observability]
+enabled = true

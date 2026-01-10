@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Cloudflare
+.wrangler/
+.dev.vars
+.mf/
+dist/
+worker-configuration.d.ts
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build outputs
+*.tsbuildinfo
+.cache/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Secrets (never commit these!)
+*.pem
+*.key
+secrets.json

@@ -1,0 +1,33 @@
+{
+  "name": "github-ai-agent",
+  "version": "1.0.0",
+  "description": "AI-powered GitHub issue troubleshooting agent using Cloudflare Workflows (Gemini 3 Flash)",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit",
+    "setup-secrets": "npm run setup:github-token && npm run setup:gemini-key",
+    "setup:github-token": "wrangler secret put GITHUB_TOKEN",
+    "setup:gemini-key": "wrangler secret put GEMINI_API_KEY",
+    "setup:webhook-secret": "wrangler secret put GITHUB_WEBHOOK_SECRET"
+  },
+  "keywords": [
+    "cloudflare",
+    "workflows",
+    "github",
+    "ai",
+    "gemini",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.16",
+    "wrangler": "^4.58.0"
+  }
+}
