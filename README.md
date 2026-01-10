@@ -46,17 +46,27 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
 
 
 ## Customization Point
-- AI Behavior: Edit `getSystemPrompt()` in `workflow.ts`
-- Response Format: Modify `formatGitHubComment()`
-- Filtering: Adjust validation logic in the workflow
+- AI Behavior: Edit system prompts in `agents/issue-responder/prompts/system-prompt.ts`
+- Response Format: Modify `formatGitHubComment()` in the same file
+- Filtering: Adjust validation logic in `agents/issue-responder/services/ValidationService.ts`
 - Model Selection: Change `GEMINI_MODEL` in `wrangler.toml`
+- Add New Agents: See `docs/ARCHITECTURE.md` for agent development guide
 
 ## Roadmap & Future Directions
 
-### Phase 1: Enhanced Context (Next)
+### Phase 1: Architecture Foundation ✅ COMPLETED
+- [x] **Hybrid Agent System**: Implemented scalable agent architecture supporting 10s-100s of agents with clean separation of concerns (refactor branch)
+- [x] **Agent Registry**: Built agent discovery, registration, and priority-based routing system
+- [x] **Platform Services**: Extracted reusable GitHub and AI clients with comprehensive error handling
+- [x] **Middleware Pipeline**: Created request processing pipeline with auth, rate limiting, and error handling
+- [x] **Observability**: Added structured logging, metrics collection, and custom error types
+- [x] **Type Safety**: Comprehensive TypeScript interfaces for agents, events, and environment
+- [x] **Documentation**: Complete architecture guide with migration path and agent development examples
+
+### Phase 1.5: Enhanced Context (In Progress)
 - [ ] **Repository Awareness**: Give the agent tools to fetch and read specific files from the repository to provide more accurate, context-aware solutions.
 - [ ] **Documentation RAG**: Implement Retrieval Augmented Generation (RAG) by indexing the project's documentation and Wiki to provide referenced answers.
-- [ ] **Threaded Conversations**: Enable the agent to respond to follow-up comments within the same issue thread.
+- [ ] **Threaded Conversations**: Enable the agent to respond to follow-up comments within the same issue thread using Agents SDK stateful conversations.
 
 ### Phase 2: Container-Based Worktree Integration
 - [ ] **Milestone 2.1: Basic Container Setup** (Week 1-2)
@@ -105,3 +115,29 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
 - [ ] **Multi-Model Fallback**: Implement logic to switch between Gemini models or fallback to OpenAI/Anthropic if one provider is unavailable.
 - [ ] **Analytics Dashboard**: A lightweight web interface to monitor token usage, cost, and success rates of AI-generated suggestions.
 - [ ] **Custom Plugin System**: Allow developers to write small TypeScript hooks to extend the agent's behavior for specific repository needs.
+- [ ] **Agent Marketplace**: Community-contributed agents with standardized packaging and deployment
+- [ ] **Durable Objects Migration**: Replace in-memory rate limiting with Durable Objects for distributed state
+- [ ] **Parallel Agent Execution**: Execute multiple agents concurrently with configurable parallelism
+- [ ] **Agent Health Monitoring**: Automatic agent health checks with alerting and self-healing capabilities
+
+### Phase 5: Advanced Agent Capabilities
+- [ ] **Code Generation Agent**: Generate entire features from natural language specifications
+- [ ] **Security Scan Agent**: Automated security vulnerability scanning for dependencies and code patterns
+- [ ] **Performance Profiling Agent**: Analyze PR performance impact and suggest optimizations
+- [ ] **Documentation Generator Agent**: Auto-generate or update documentation based on code changes
+- [ ] **Migration Assistant Agent**: Help migrate code between frameworks or language versions
+- [ ] **Accessibility Audit Agent**: Check PRs for WCAG compliance and accessibility best practices
+
+## Current Status
+
+**Active Branch:** `refactor` - Hybrid agent architecture implementation
+**Main Branch:** Legacy workflow system (stable)
+
+To use the new architecture:
+```bash
+git checkout refactor
+npm install
+npm run dev
+```
+
+See `docs/ARCHITECTURE.md` for detailed documentation on the new system.
