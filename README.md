@@ -14,13 +14,19 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
 - Cloudflare Wrangler CLI (`npm install -g wrangler`)
 - GitHub Personal Access Token with `repo` scope
 - Gemini API key from Google AI Studio
+- **Cloudflare Workers Paid Plan ($5/month)** — Required for R2 storage (Phase 2 features)
+- **Cloudflare Containers Beta Access** — Optional, for container-based testing (Phase 2)
 
 ## Setup
 1. Install dependencies: `npm install`.
 2. Copy `.dev.vars.example` to `.dev.vars` and fill in secrets.
 3. Update `wrangler.toml` with your `GITHUB_REPO` and secrets.
-4. Start local dev server: `npm run dev` (default at `http://localhost:8787`).
-5. Send a GitHub webhook payload to the dev server and verify `/health` returns 200.
+4. **(Optional - Phase 2)** Enable R2 in Cloudflare Dashboard (requires $5/month paid plan), then create bucket:
+   ```bash
+   wrangler r2 bucket create github-ai-agent-artifacts
+   ```
+5. Start local dev server: `npm run dev` (default at `http://localhost:8787`).
+6. Send a GitHub webhook payload to the dev server and verify `/health` returns 200.
 
 ## Scripts
 - `npm run dev` — Run locally with Wrangler.
@@ -69,37 +75,38 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
 - [ ] **Threaded Conversations**: Enable the agent to respond to follow-up comments within the same issue thread using Agents SDK stateful conversations.
 
 ### Phase 2: Container-Based Worktree Integration
-- [ ] **Milestone 2.1: Basic Container Setup** (Week 1-2)
+- [x] **Milestone 2.1: Basic Container Setup** (Week 1-2) ✅
   - Deploy Cloudflare Container with git and Node.js pre-installed
   - Integrate `git-worktree-runner` (gtr) CLI into container image
   - Establish secure GitHub authentication for repository cloning
   - Implement basic worktree creation: `git gtr new fix-issue-{number}`
   
-- [ ] **Milestone 2.2: Isolated Testing Environment** (Week 3-4)
+- [x] **Milestone 2.2: Isolated Testing Environment** (Week 3-4) ✅
   - AI-generated fix application to worktree branches
   - Execute test suites within container (npm test, pytest, etc.)
   - Parse test output and capture success/failure metrics
   - Post test results as GitHub issue comments with formatted output
   
-- [ ] **Milestone 2.3: R2 Persistent Storage** (Week 5-6)
-  - Mount R2 bucket as FUSE filesystem for worktree persistence
-  - Implement worktree caching strategy to avoid re-cloning
-  - Enable multi-turn agent workflows with persistent branches
-  - Add worktree lifecycle management (create, resume, cleanup)
+- [x] **Milestone 2.3: R2 Persistent Storage** (Week 5-6) ✅
+  - R2 bucket binding for test artifact persistence
+  - Store test logs (stdout/stderr), coverage reports, and summaries
+  - Artifact download endpoint at `/artifacts/{key}`
+  - Automatic cleanup with retention policy support
   
-- [ ] **Milestone 2.4: Real-Time Streaming** (Week 7-8)
-  - WebSocket integration for live test output streaming
-  - Stream container logs to GitHub issue comments in real-time
-  - Implement status hooks to track container lifecycle events
-  - Add progress indicators for long-running test suites
+- [x] **Milestone 2.4: Real-Time Streaming** (Week 7-8) ✅
+  - WebSocket endpoint at `/ws/stream` for live test output
+  - Server-Sent Events (SSE) from container at `/stream?jobId=xxx`
+  - GitHubStreamUpdater for live-updating progress comments
+  - R2 FUSE mount via tigrisfs for filesystem artifact access
+  - Proper `git gtr run <branch> <cmd>` pattern per research spec
   
-- [ ] **Milestone 2.5: Parallel Multi-Solution Testing** (Week 9-10)
+- [x] **Milestone 2.5: Parallel Multi-Solution Testing** (Week 9-10)
   - Spawn multiple containers with different AI-generated solutions
   - Run tests concurrently across isolated worktrees (solution-a, solution-b, solution-c)
   - Benchmark performance, code coverage, and test pass rates
   - Generate comparative analysis and recommend optimal solution
   
-- [ ] **Milestone 2.6: Automated PR Workflow** (Week 11-12)
+- [x] **Milestone 2.6: Automated PR Workflow** (Week 11-12)
   - Auto-create pull requests when container tests pass
   - Include test results, coverage reports, and AI reasoning in PR description
   - Link PR back to original issue with test validation proof

@@ -5,14 +5,31 @@
 import type { IAgent, AgentContext, AgentResult, AgentRegistration } from '../types/agents';
 import type { GitHubEvent } from '../types/events';
 import { AgentExecutionContext } from './base/AgentContext';
+import { IssueResponderAgent } from './issue-responder/agent';
+import { ContainerTestAgent } from './container-test/agent';
+import { PRAgent } from './pr-agent/agent';
 
 export class AgentRegistry {
   private agents: Map<string, AgentRegistration> = new Map();
   
   /**
+   * Initialize registry with built-in agents
+   */
+  initialize(): void {
+    // Register IssueResponderAgent
+    this.register(new IssueResponderAgent());
+    
+    // Register ContainerTestAgent
+    this.register(new ContainerTestAgent());
+    
+    // Register PRAgent (Phase 2.6)
+    this.register(new PRAgent());
+  }
+  
+  /**
    * Register an agent
    */
-  register(agent: IAgent): void {
+  register(agent: IAgent, config?: any): void {
     if (this.agents.has(agent.name)) {
       throw new Error(`Agent ${agent.name} is already registered`);
     }

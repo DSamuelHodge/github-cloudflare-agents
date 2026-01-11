@@ -10,10 +10,43 @@ GITHUB_BOT_USERNAME = "cloudflare-ai-bot"
 LOG_LEVEL = "info"
 # TARGET_REPO = "your-org/your-repo"  # Optional: restrict to specific repo
 
+# R2 FUSE mount configuration (Phase 2.4b)
+# R2_BUCKET_NAME and R2_ACCOUNT_ID are non-sensitive
+R2_BUCKET_NAME = "github-ai-agent-artifacts"
+# R2_ACCOUNT_ID = "your-account-id"  # Set this to your Cloudflare account ID
+
 # Secrets - Set these with: wrangler secret put <NAME>
 # GITHUB_TOKEN - GitHub Personal Access Token with repo:write permissions
 # GEMINI_API_KEY - Gemini API key from Google AI Studio (OpenAI-compatible endpoint)
 # GITHUB_WEBHOOK_SECRET - Optional: GitHub webhook secret for signature verification
+# AWS_ACCESS_KEY_ID - R2 API token Access Key ID (for FUSE mount)
+# AWS_SECRET_ACCESS_KEY - R2 API token Secret Access Key (for FUSE mount)
+
+# Container configuration (Phase 2: Worktree Integration)
+# NOTE: Requires Cloudflare Containers beta access. Comment out if not enabled.
+# [[containers]]
+# max_instances = 5
+# class_name = "TestContainer"
+# image = "./Dockerfile"
+
+# Durable Objects for container lifecycle management
+# NOTE: Requires containers to be enabled
+# [durable_objects]
+# bindings = [
+#   { name = "TEST_CONTAINER", class_name = "TestContainer" }
+# ]
+
+# Migrations for new Durable Object classes
+# [[migrations]]
+# tag = "v1"
+# new_sqlite_classes = ["TestContainer"]
+
+# R2 bucket binding for persistent storage (Phase 2.3)
+# Create bucket with: wrangler r2 bucket create github-ai-agent-artifacts
+# NOTE: Enable R2 in Cloudflare Dashboard first, then uncomment:
+[[r2_buckets]]
+binding = "TEST_ARTIFACTS"
+bucket_name = "github-ai-agent-artifacts"
 
 # Observability
 [observability]

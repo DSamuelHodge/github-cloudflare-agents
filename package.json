@@ -1,8 +1,8 @@
 {
   "name": "github-ai-agent",
-  "version": "1.0.0",
-  "description": "AI-powered GitHub issue troubleshooting agent using Cloudflare Workflows (Gemini 3 Flash)",
-  "main": "src/index.ts",
+  "version": "2.0.0",
+  "description": "Scalable multi-agent system for GitHub automation using Cloudflare Workers, Containers, and Gemini AI. Supports 10s-100s of autonomous agents with clean architecture, isolated services, and comprehensive observability.",
+  "main": "src/index.new.ts",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
@@ -16,18 +16,27 @@
   },
   "keywords": [
     "cloudflare",
-    "workflows",
+    "workers",
+    "containers",
     "github",
     "ai",
     "gemini",
-    "automation"
+    "automation",
+    "agents",
+    "multi-agent",
+    "git-worktree",
+    "typescript"
   ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
+    "@types/node": "^25.0.6",
     "typescript": "^5.7.2",
     "vitest": "^4.0.16",
     "wrangler": "^4.58.0"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.31"
   }
 }

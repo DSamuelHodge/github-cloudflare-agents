@@ -15,18 +15,28 @@ import { defaultRateLimit } from './middleware/rate-limit';
 import { createLogger } from './utils/logger';
 import { createMetrics } from './utils/metrics';
 import { extractWebhookPayload } from './platform/github/webhook';
+import { R2StorageService } from './platform/storage';
+import { StreamingService } from './platform/streaming';
+
+// Export TestContainer for Cloudflare Containers (Phase 2)
+export { TestContainer } from './containers/TestContainer';
+
+// Global streaming service instance (per-isolate)
+let streamingService: StreamingService | null = null;
+
+function getStreamingService(env: Env): StreamingService {
+  if (!streamingService) {
+    streamingService = new StreamingService(env);
+  }
+  return streamingService;
+}
 
 /**
  * Initialize agents on worker startup
  */
 function initializeAgents() {
-  // Register Issue Responder Agent
-  const issueResponder = new IssueResponderAgent({
-    enabled: true,
-    priority: 100,
-  });
-  
-  globalRegistry.register(issueResponder);
+  // Initialize the global registry with all built-in agents
+  globalRegistry.initialize();
   
   console.log('[Init] Agents registered:', globalRegistry.getStats());
 }
@@ -51,6 +61,23 @@ export default {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+    
+    // WebSocket streaming endpoint (Phase 2.4)
+    if (url.pathname === '/ws/stream') {
+      const streaming = getStreamingService(env);
+      return streaming.handleWebSocketUpgrade(request);
+    }
+
+    // Streaming stats endpoint (Phase 2.4)
+    if (request.method === 'GET' && url.pathname === '/ws/stats') {
+      const streaming = getStreamingService(env);
+      return Response.json(streaming.getStats());
+    }
+
+    // Artifact download endpoint (Phase 2.3)
+    if (request.method === 'GET' && url.pathname.startsWith('/artifacts/')) {
+      return handleArtifactRequest(url.pathname, env);
     }
     
     // Create middleware pipeline
@@ -158,3 +185,42 @@ async function handleWebhook(context: { request: Request; env: Env; executionCon
 export type { Env } from './types/env';
 export { IssueResponderAgent } from './agents/issue-responder/agent';
 export { globalRegistry } from './agents/registry';
+
+/**
+ * Handle artifact download requests (Phase 2.3)
+ */
+async function handleArtifactRequest(pathname: string, env: Env): Promise<Response> {
+  // Extract key from /artifacts/test-artifacts/{owner}/{repo}/{jobId}/{type}/{filename}
+  const key = pathname.replace('/artifacts/', '');
+
+  if (!key) {
+    return new Response('Missing artifact key', { status: 400 });
+  }
+
+  try {
+    const storage = new R2StorageService(env);
+    const { content, metadata } = await storage.getArtifact(key);
+
+    if (!content || !metadata) {
+      return new Response('Artifact not found', { status: 404 });
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': metadata.httpMetadata?.contentType || 'application/octet-stream',
+      'Content-Length': String(metadata.size),
+      'ETag': metadata.etag,
+      'Cache-Control': 'public, max-age=86400', // Cache for 1 day
+    };
+
+    return new Response(content, {
+      status: 200,
+      headers,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to retrieve artifact';
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
