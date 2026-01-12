@@ -99,7 +99,7 @@ export class ContainerTestAgent extends BaseAgent {
       
       // Initialize parallel testing services (Phase 2.5)
       this.parallelService = new ParallelTestService(fullEnv, {
-        maxConcurrency: 3,
+          maxConcurrency: 5,
         allocationStrategy: 'random',
       });
       this.resultAggregator = new ResultAggregator();
@@ -457,6 +457,36 @@ export class ContainerTestAgent extends BaseAgent {
   }
 
   /**
+   * Parse parallel execution options (candidate count)
+   */
+  private parseParallelOptions(context: AgentContext): { candidateCount: number } {
+    const payload = context.payload as { comment?: { body?: string } };
+    let candidateCount = 3;
+
+    if (context.eventType === 'issue_comment') {
+      const comment = payload.comment?.body || '';
+
+      // Allow formats: /test-parallel 4, /test --parallel=5, --solutions=4
+      const directMatch = comment.match(/\/test-parallel\s+(\d+)/);
+      const flagMatch = comment.match(/--parallel\s*=\s*(\d+)/);
+      const solutionsMatch = comment.match(/--solutions\s*=\s*(\d+)/);
+
+      const parsed = directMatch?.[1] || flagMatch?.[1] || solutionsMatch?.[1];
+      if (parsed) {
+        const count = Number(parsed);
+        if (!Number.isNaN(count)) {
+          candidateCount = count;
+        }
+      }
+    }
+
+    // Clamp between 3 and 5 to control cost/time
+    candidateCount = Math.max(3, Math.min(5, candidateCount));
+
+    return { candidateCount };
+  }
+
+  /**
    * Execute parallel multi-solution tests (Phase 2.5)
    */
   private async executeParallelTests(
@@ -470,10 +500,12 @@ export class ContainerTestAgent extends BaseAgent {
 
     const jobId = this.containerService.generateJobId();
     const issueNumber = testParams.githubContext.prNumber || testParams.githubContext.issueNumber;
+    const { candidateCount } = this.parseParallelOptions(context);
 
     context.logger.info('Starting parallel test execution', {
       jobId,
       branch: testParams.branch,
+      candidateCount,
     });
 
     // Post initial progress comment
@@ -486,7 +518,7 @@ export class ContainerTestAgent extends BaseAgent {
         {
           phase: 'cloning',
           percent: 5,
-          message: `🚀 Starting parallel test execution for branch \`${testParams.branch}\`...`,
+          message: `🚀 Starting parallel test execution for branch \`${testParams.branch}\` with ${candidateCount} candidate(s)...`,
         }
       );
     }
@@ -496,7 +528,7 @@ export class ContainerTestAgent extends BaseAgent {
     const solutions = solutionGenerator.generateVariants(jobId, {
       title: 'Parallel Test Run',
       body: `Testing branch ${testParams.branch} with multiple strategies`,
-    }, 3);
+    }, candidateCount);
 
     context.logger.info('Generated solution variants', {
       jobId,
@@ -527,7 +559,7 @@ export class ContainerTestAgent extends BaseAgent {
       timeoutMs: testParams.timeoutMs,
       context: testParams.githubContext,
       createdAt: new Date(),
-      maxConcurrency: 3,
+      maxConcurrency: Math.min(candidateCount, 5),
     };
 
     // Execute parallel tests
