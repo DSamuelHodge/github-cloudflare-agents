@@ -22,6 +22,7 @@ import { getGlobalCostTracker } from './platform/monitoring/CostTracker';
 import { getGlobalRAGMetricsTracker } from './platform/monitoring/RAGMetrics';
 import { RepositoryConfigService } from './platform/repository-config';
 import { extractRepositoryTarget, hasRepositoryConfigs, resolveRepositoryContext } from './utils/repository';
+import { handlePhase3Analytics } from './platform/analytics/endpoints';
 
 // Export TestContainer for Cloudflare Containers (Phase 2)
 export { TestContainer } from './containers/TestContainer';
@@ -148,6 +149,12 @@ export default {
           lowQualityQueries: ragMetrics.getLowQualityQueries(0.7).length,
         },
       });
+    }
+
+    // Phase 3 analytics endpoint (Phase 3.10)
+    // GET /analytics/phase3
+    if (request.method === 'GET' && url.pathname === '/analytics/phase3') {
+      return handlePhase3Analytics(env);
     }
     
     // Create middleware pipeline

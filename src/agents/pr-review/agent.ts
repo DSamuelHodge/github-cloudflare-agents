@@ -8,6 +8,7 @@ import type { AgentContext, AgentResult } from '../../types/agents';
 import { createGitHubClient } from '../../platform/github';
 import { createAIClient } from '../../platform/ai/client';
 import { PermissionService } from '../../platform/github/permissions';
+import { getGlobalPhase3Analytics } from '../../platform/analytics';
 import { CodeAnalysisService } from './services/CodeAnalysisService';
 import { GitHubReviewService } from './services/GitHubReviewService';
 import { PR_REVIEW_AGENT_CONFIG } from './config';
@@ -164,6 +165,23 @@ export class PRReviewAgent extends BaseAgent {
           context.metrics.increment('pr_review.posted');
         }
 
+      // Record analytics
+      if (context.repository) {
+        try {
+          const analytics = getGlobalPhase3Analytics(context.logger);
+          analytics.recordPRReviewEvent(
+            analysis.summary.issuesFound,
+            reviewResult?.submitted || false,
+            true,
+            context.repository
+          );
+        } catch (error) {
+          context.logger.debug('Failed to record PR review analytics', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
       return {
         success: true,
         agentName: this.name,
@@ -183,6 +201,18 @@ export class PRReviewAgent extends BaseAgent {
         prNumber: pr.number,
       });
       context.metrics.increment('pr_review.error');
+
+      // Record failure analytics
+      if (context.repository) {
+        try {
+          const analytics = getGlobalPhase3Analytics(context.logger);
+          analytics.recordPRReviewEvent(0, false, false, context.repository);
+        } catch (analyticsError) {
+          context.logger.debug('Failed to record PR review failure analytics', {
+            error: analyticsError instanceof Error ? analyticsError.message : 'Unknown error',
+          });
+        }
+      }
 
       return {
         success: false,

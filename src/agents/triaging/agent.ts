@@ -10,6 +10,7 @@ import { createGitHubClient } from '../../platform/github';
 import { PermissionService } from '../../platform/github/permissions';
 import { createAIClient } from '../../platform/ai/client';
 import type { AIClient } from '../../platform/ai/client';
+import { getGlobalPhase3Analytics } from '../../platform/analytics';
 import { TRIAGING_AGENT_CONFIG } from './config';
 import { TRIAGING_SYSTEM_PROMPT, buildTriagingPrompt } from './prompts/system-prompt';
 
@@ -157,6 +158,24 @@ export class TriagingAgent extends BaseAgent {
       context.metrics.increment('triaging.success');
       context.metrics.increment('triaging.confidence', classification.confidence);
 
+      // Record analytics
+      if (context.repository) {
+        try {
+          const analytics = getGlobalPhase3Analytics(context.logger);
+          analytics.recordTriagingEvent(
+            classification.confidence,
+            classification.labels.length,
+            classification.assignees?.length || 0,
+            true,
+            context.repository
+          );
+        } catch (error) {
+          context.logger.debug('Failed to record triaging analytics', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
       return {
         success: true,
         agentName: this.name,
@@ -175,6 +194,18 @@ export class TriagingAgent extends BaseAgent {
         issueNumber: issue.number,
       });
       context.metrics.increment('triaging.error');
+
+      // Record failure analytics
+      if (context.repository) {
+        try {
+          const analytics = getGlobalPhase3Analytics(context.logger);
+          analytics.recordTriagingEvent(0, 0, 0, false, context.repository);
+        } catch (analyticsError) {
+          context.logger.debug('Failed to record triaging failure analytics', {
+            error: analyticsError instanceof Error ? analyticsError.message : 'Unknown error',
+          });
+        }
+      }
 
       return {
         success: false,
