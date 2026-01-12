@@ -6,6 +6,8 @@ import type { IAgent, AgentContext, AgentResult, AgentRegistration } from '../ty
 import { IssueResponderAgent } from './issue-responder/agent';
 import { ContainerTestAgent } from './container-test/agent';
 import { PRAgent } from './pr-agent/agent';
+import { TriagingAgent } from './triaging/agent';
+import { PRReviewAgent } from './pr-review/agent';
 
 export class AgentRegistry {
   private agents: Map<string, AgentRegistration> = new Map();
@@ -22,6 +24,12 @@ export class AgentRegistry {
     
     // Register PRAgent (Phase 2.6)
     this.register(new PRAgent());
+    
+      // Register TriagingAgent (Phase 3.4)
+      this.register(new TriagingAgent());
+    
+        // Register PRReviewAgent (Phase 3.5)
+        this.register(new PRReviewAgent());
   }
   
   /**

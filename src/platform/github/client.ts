@@ -152,6 +152,56 @@ export class GitHubClient {
     const path = `/repos/${owner}/${repo}`;
     return this.request<GitHubRepository>('GET', path);
   }
+  
+  /**
+   * Get a pull request by number
+   */
+  async getPullRequest(owner: string, repo: string, pullNumber: number): Promise<import('../../types/github').GitHubPullRequest> {
+    const path = `/repos/${owner}/${repo}/pulls/${pullNumber}`;
+    return this.request('GET', path);
+  }
+  
+  /**
+   * Get files changed in a pull request
+   */
+  async getPullRequestFiles(owner: string, repo: string, pullNumber: number): Promise<import('../../types/github').GitHubPullRequestFile[]> {
+    const path = `/repos/${owner}/${repo}/pulls/${pullNumber}/files`;
+    return this.request('GET', path);
+  }
+  
+  /**
+   * Create a review comment on a pull request
+   */
+  async createReviewComment(options: import('../../types/github').CreateReviewCommentOptions): Promise<import('../../types/github').GitHubReviewComment> {
+    const { owner, repo, pullNumber, ...commentData } = options;
+    const path = `/repos/${owner}/${repo}/pulls/${pullNumber}/comments`;
+    return this.request('POST', path, commentData);
+  }
+  
+  /**
+   * Submit a pull request review
+   */
+  async submitReview(options: import('../../types/github').SubmitReviewOptions): Promise<import('../../types/github').GitHubReview> {
+    const { owner, repo, pullNumber, ...reviewData } = options;
+    const path = `/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`;
+    return this.request('POST', path, reviewData);
+  }
+  
+  /**
+   * Request reviewers for a pull request
+   */
+  async requestReviewers(owner: string, repo: string, pullNumber: number, reviewers: string[]): Promise<void> {
+    const path = `/repos/${owner}/${repo}/pulls/${pullNumber}/requested_reviewers`;
+    await this.request('POST', path, { reviewers });
+  }
+  
+  /**
+   * Get repository permissions for the authenticated user
+   */
+  async getRepositoryPermissions(owner: string, repo: string, username: string): Promise<import('../../types/github').GitHubCollaboratorPermission> {
+    const path = `/repos/${owner}/${repo}/collaborators/${username}/permission`;
+    return this.request('GET', path);
+  }
 }
 
 /**

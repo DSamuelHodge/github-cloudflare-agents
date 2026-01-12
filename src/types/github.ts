@@ -94,3 +94,104 @@ export interface GitHubDirectoryContent {
 }
 
 export type GitHubContent = GitHubFileContent | GitHubDirectoryContent[];
+
+/**
+ * Pull Request types
+ */
+export interface GitHubPullRequest {
+  number: number;
+  title: string;
+  body: string | null;
+  state: 'open' | 'closed';
+  user: GitHubUser;
+  head: {
+    ref: string;
+    sha: string;
+    repo: GitHubRepository;
+  };
+  base: {
+    ref: string;
+    sha: string;
+    repo: GitHubRepository;
+  };
+  html_url: string;
+  diff_url: string;
+  created_at: string;
+  updated_at: string;
+  mergeable?: boolean | null;
+  draft: boolean;
+}
+
+export interface GitHubPullRequestFile {
+  sha: string;
+  filename: string;
+  status: 'added' | 'removed' | 'modified' | 'renamed' | 'copied' | 'changed' | 'unchanged';
+  additions: number;
+  deletions: number;
+  changes: number;
+  patch?: string;
+  blob_url: string;
+  raw_url: string;
+}
+
+export interface GitHubReviewComment {
+  id: number;
+  body: string;
+  path: string;
+  position?: number;
+  line?: number;
+  commit_id: string;
+  user: GitHubUser;
+  created_at: string;
+  html_url: string;
+}
+
+export interface CreateReviewCommentOptions {
+  owner: string;
+  repo: string;
+  pullNumber: number;
+  body: string;
+  commit_id: string;
+  path: string;
+  line?: number;
+  side?: 'LEFT' | 'RIGHT';
+}
+
+export interface SubmitReviewOptions {
+  owner: string;
+  repo: string;
+  pullNumber: number;
+  event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
+  body?: string;
+  comments?: Array<{
+    path: string;
+    line: number;
+    body: string;
+    side?: 'LEFT' | 'RIGHT';
+  }>;
+}
+
+export interface GitHubReview {
+  id: number;
+  user: GitHubUser;
+  body: string;
+  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING';
+  html_url: string;
+  submitted_at: string;
+}
+
+/**
+ * Repository permissions
+ */
+export interface GitHubRepositoryPermissions {
+  admin: boolean;
+  maintain: boolean;
+  push: boolean;
+  triage: boolean;
+  pull: boolean;
+}
+
+export interface GitHubCollaboratorPermission {
+  permission: 'admin' | 'write' | 'read' | 'none';
+  user: GitHubUser;
+}
