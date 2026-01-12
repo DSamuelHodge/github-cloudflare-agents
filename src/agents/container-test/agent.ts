@@ -88,7 +88,10 @@ export class ContainerTestAgent extends BaseAgent {
       
       // Initialize storage service for artifact persistence
       try {
-        this.storageService = new R2StorageService(fullEnv);
+        this.storageService = new R2StorageService(
+          fullEnv,
+          context.repository?.storagePrefix
+        );
       } catch {
         context.logger.warn('R2 storage not available, artifacts will not be persisted');
         this.storageService = null;

@@ -43,14 +43,16 @@ export class R2StorageService {
   private logger: Logger;
   private bucket: R2Bucket;
   private readonly BUCKET_PREFIX = 'test-artifacts';
+  private storageRoot: string | null;
 
-  constructor(env: Env) {
+  constructor(env: Env, storageRoot?: string) {
     if (!env.TEST_ARTIFACTS) {
       throw new Error('TEST_ARTIFACTS R2 binding not configured');
     }
     this.bucket = env.TEST_ARTIFACTS;
     const logLevel = (env.LOG_LEVEL || 'info') as 'debug' | 'info' | 'warn' | 'error';
     this.logger = new Logger(logLevel, { component: 'R2StorageService' });
+    this.storageRoot = storageRoot && storageRoot.length > 0 ? storageRoot : null;
   }
 
   /**
@@ -63,7 +65,8 @@ export class R2StorageService {
     filename: string
   ): string {
     const { owner, repo, jobId } = metadata;
-    return `${this.BUCKET_PREFIX}/${owner}/${repo}/${jobId}/${type}/${filename}`;
+    const basePrefix = this.storageRoot ?? `${owner}/${repo}/`;
+    return `${this.BUCKET_PREFIX}/${basePrefix}${jobId}/${type}/${filename}`;
   }
 
   /**

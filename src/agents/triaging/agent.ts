@@ -34,6 +34,14 @@ export class TriagingAgent extends BaseAgent {
     const parentCheck = await super.shouldHandle(context);
     if (!parentCheck) return false;
 
+    const triagingConfig = context.repository?.config?.triaging;
+    if (triagingConfig && triagingConfig.enabled === false) {
+      context.logger.info('Triaging disabled for repository', {
+        repository: context.repository?.fullName,
+      });
+      return false;
+    }
+
     // Only handle issue opened events
     const payload = context.payload as GitHubIssueWebhookPayload;
     if (payload.action !== 'opened') {
@@ -50,6 +58,8 @@ export class TriagingAgent extends BaseAgent {
     const startTime = Date.now();
     const payload = context.payload as GitHubIssueWebhookPayload;
     const { issue, repository } = payload;
+    const triagingConfig = context.repository?.config?.triaging;
+    const confidenceThreshold = triagingConfig?.confidenceThreshold ?? 0.7;
 
     context.logger.info('Triaging issue', {
       issueNumber: issue.number,
@@ -111,7 +121,7 @@ export class TriagingAgent extends BaseAgent {
       // Apply labels if confidence threshold met
       const appliedChanges: string[] = [];
       
-      if (canLabel && classification.confidence >= 0.7 && classification.labels.length > 0) {
+      if (canLabel && classification.confidence >= confidenceThreshold && classification.labels.length > 0) {
         await github.addLabels(
           repository.owner.login,
           repository.name,

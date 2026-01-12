@@ -40,6 +40,14 @@ export class PRReviewAgent extends BaseAgent {
     const parentCheck = await super.shouldHandle(context);
     if (!parentCheck) return false;
 
+    const reviewConfig = context.repository?.config?.review;
+    if (reviewConfig && reviewConfig.enabled === false) {
+      context.logger.info('PR review disabled for repository', {
+        repository: context.repository?.fullName,
+      });
+      return false;
+    }
+
     // Only handle PR opened and synchronize events
     const payload = context.payload as PullRequestWebhookPayload;
     if (!['opened', 'synchronize'].includes(payload.action)) {
@@ -64,6 +72,7 @@ export class PRReviewAgent extends BaseAgent {
     const startTime = Date.now();
     const payload = context.payload as PullRequestWebhookPayload;
     const { pull_request: pr, repository } = payload;
+    const reviewConfig = context.repository?.config?.review;
 
     context.logger.info('Analyzing pull request', {
       prNumber: pr.number,
@@ -110,7 +119,11 @@ export class PRReviewAgent extends BaseAgent {
       );
 
       // Analyze the PR
-      const analysis = await analysisService.analyzePR(files);
+      const analysis = await analysisService.analyzePR(files, {
+        focusAreas: reviewConfig?.focus,
+        minSeverity: reviewConfig?.minSeverity,
+        ignorePatterns: reviewConfig?.ignorePatterns,
+      });
 
       context.logger.info('PR analysis complete', {
         issuesFound: analysis.summary.issuesFound,
@@ -133,7 +146,7 @@ export class PRReviewAgent extends BaseAgent {
             pullNumber: pr.number,
             commitId: prDetails.head.sha,
             comments: analysis.comments,
-            minSeverity: 'warning', // Only post warnings and errors
+            minSeverity: reviewConfig?.minSeverity || 'warning',
           });
 
           if (reviewResult.submitted) {

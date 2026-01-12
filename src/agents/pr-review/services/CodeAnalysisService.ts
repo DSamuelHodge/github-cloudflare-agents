@@ -42,15 +42,24 @@ export class CodeAnalysisService {
   /**
    * Analyze PR files and generate review comments
    */
-  async analyzePR(files: GitHubPullRequestFile[]): Promise<CodeAnalysisResult> {
+  async analyzePR(
+    files: GitHubPullRequestFile[],
+    options?: {
+      focusAreas?: ReviewFocusArea[];
+      minSeverity?: ReviewSeverity;
+      ignorePatterns?: string[];
+    }
+  ): Promise<CodeAnalysisResult> {
     this.logger.info('Starting code analysis', {
       totalFiles: files.length,
     });
 
+    const compiledIgnorePatterns = this.compileIgnorePatterns(options?.ignorePatterns);
+
     // Filter and limit files
     const analyzableFiles = files
       .filter(file => file.patch && file.status !== 'removed')
-      .filter(file => this.isAnalyzableFile(file.filename))
+      .filter(file => this.isAnalyzableFile(file.filename, compiledIgnorePatterns))
       .slice(0, MAX_FILES_PER_REVIEW);
 
     if (analyzableFiles.length === 0) {
@@ -79,18 +88,37 @@ export class CodeAnalysisService {
       });
 
       const comments = this.parseReviewComments(response.content);
+      const filteredComments = this.filterComments(comments, options);
 
-      return this.buildAnalysisResult(files.length, analyzableFiles.length, comments);
+      return this.buildAnalysisResult(files.length, analyzableFiles.length, filteredComments);
     } catch (error) {
       this.logger.error('Code analysis failed', error as Error);
       return this.emptyResult(files.length);
     }
   }
 
+  private compileIgnorePatterns(patterns?: string[]): RegExp[] {
+    if (!patterns || patterns.length === 0) {
+      return [];
+    }
+
+    const compiled: RegExp[] = [];
+
+    for (const pattern of patterns) {
+      try {
+        compiled.push(new RegExp(pattern));
+      } catch (error) {
+        this.logger.warn('Ignoring invalid review ignore pattern', { pattern, error });
+      }
+    }
+
+    return compiled;
+  }
+
   /**
    * Check if a file should be analyzed
    */
-  private isAnalyzableFile(filename: string): boolean {
+  private isAnalyzableFile(filename: string, additionalIgnore?: RegExp[]): boolean {
     const ignoredExtensions = [
       '.json', '.lock', '.md', '.txt', '.yml', '.yaml',
       '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico',
@@ -105,6 +133,7 @@ export class CodeAnalysisService {
       /dist\//,
       /build\//,
       /node_modules\//,
+      ...(additionalIgnore || []),
     ];
 
     // Check extension
@@ -126,6 +155,30 @@ export class CodeAnalysisService {
       return patch;
     }
     return lines.slice(0, maxLines).join('\n') + '\n... (truncated)';
+  }
+
+  private filterComments(
+    comments: ReviewComment[],
+    options?: { focusAreas?: ReviewFocusArea[]; minSeverity?: ReviewSeverity }
+  ): ReviewComment[] {
+    const severityOrder: Record<ReviewSeverity, number> = {
+      info: 0,
+      warning: 1,
+      error: 2,
+    };
+
+    const minSeverity = options?.minSeverity;
+    const focusAreas = options?.focusAreas;
+    const severityThreshold = minSeverity ? severityOrder[minSeverity] : null;
+
+    return comments.filter(comment => {
+      const severityValue = severityOrder[comment.severity];
+      const passesSeverity = severityThreshold === null || severityValue >= severityThreshold;
+      const passesFocus = focusAreas && focusAreas.length > 0
+        ? focusAreas.includes(comment.category)
+        : true;
+      return passesSeverity && passesFocus;
+    });
   }
 
   /**
