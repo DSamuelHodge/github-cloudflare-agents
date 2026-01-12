@@ -2,6 +2,8 @@
  * Core agent system types and interfaces
  */
 
+import type { RepositoryContext } from './repository';
+
 /**
  * Agent execution context passed to all agents
  */
@@ -14,6 +16,8 @@ export interface AgentContext {
   eventType: string;
   /** Raw webhook payload */
   payload: unknown;
+  /** Repository context (resolved per webhook) */
+  repository?: RepositoryContext;
   /** Environment variables and secrets */
   env: AgentEnv;
   /** Logger instance */
@@ -31,6 +35,7 @@ export interface AgentEnv {
   GITHUB_BOT_USERNAME: string;
   GITHUB_WEBHOOK_SECRET: string;
   TARGET_REPO?: string;
+  REPO_CONFIG?: string;
   
   // AI
   GEMINI_API_KEY: string;

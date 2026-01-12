@@ -20,6 +20,8 @@ import { DocumentationIndexer } from './platform/documentation/indexer';
 import { createGitHubRepositoryService } from './platform/github';
 import { getGlobalCostTracker } from './platform/monitoring/CostTracker';
 import { getGlobalRAGMetricsTracker } from './platform/monitoring/RAGMetrics';
+import { RepositoryConfigService } from './platform/repository-config';
+import { extractRepositoryTarget, hasRepositoryConfigs, resolveRepositoryContext } from './utils/repository';
 
 // Export TestContainer for Cloudflare Containers (Phase 2)
 export { TestContainer } from './containers/TestContainer';
@@ -199,6 +201,44 @@ async function handleWebhook(context: { request: Request; env: Env; executionCon
   const metrics = createMetrics({
     event_type: eventType || 'unknown',
   });
+
+  // Repository configuration
+  const repositoryConfigService = RepositoryConfigService.fromEnvironment(env, logger);
+  const repositoryTarget = extractRepositoryTarget(payload);
+  const repositoryContext = repositoryTarget
+    ? resolveRepositoryContext(repositoryTarget, repositoryConfigService)
+    : undefined;
+
+  if (!repositoryContext && hasRepositoryConfigs(repositoryConfigService)) {
+    logger.warn('Repository missing from payload; skipping because registry is defined');
+    metrics.increment('webhook.skipped', 1, { reason: 'missing_repository' });
+
+    return new Response(JSON.stringify({
+      requestId,
+      eventType,
+      skipped: true,
+      reason: 'missing_repository',
+    }), {
+      status: 202,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (repositoryContext && !repositoryContext.config && hasRepositoryConfigs(repositoryConfigService)) {
+    logger.warn('Repository not configured; skipping webhook', { repository: repositoryContext.fullName });
+    metrics.increment('webhook.skipped', 1, { reason: 'repo_not_configured', repository: repositoryContext.fullName });
+
+    return new Response(JSON.stringify({
+      requestId,
+      eventType,
+      repository: repositoryContext.fullName,
+      skipped: true,
+      reason: 'repo_not_configured',
+    }), {
+      status: 202,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
   
   // Create GitHub event
   const headers: Record<string, string> = {};
@@ -219,12 +259,14 @@ async function handleWebhook(context: { request: Request; env: Env; executionCon
     githubEvent,
     env,
     logger,
-    metrics
+    metrics,
+    repositoryContext
   );
   
   logger.info('Webhook received', {
     eventType,
     action: githubEvent.action,
+    repository: repositoryContext?.fullName,
   });
   
   // Execute agents

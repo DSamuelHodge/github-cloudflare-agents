@@ -85,6 +85,15 @@ export class AgentRegistry {
       const { agent } = registration;
       
       try {
+        const enabledAgents = context.repository?.config?.enabledAgents;
+        if (enabledAgents && !enabledAgents.includes(agent.name)) {
+          context.logger.info('Agent disabled for repository', {
+            agent: agent.name,
+            repository: context.repository?.fullName,
+          });
+          continue;
+        }
+
         const canHandle = await agent.shouldHandle(context);
         if (canHandle) {
           const priority = agent.config.priority || 100;

@@ -42,6 +42,25 @@ export interface RepositoryConfig {
 }
 
 /**
+ * Minimal repository identity extracted from webhook payloads
+ */
+export interface RepositoryTarget {
+  owner: string;
+  repo: string;
+  fullName: string;
+}
+
+/**
+ * Repository execution context resolved against registry
+ */
+export interface RepositoryContext extends RepositoryTarget {
+  /** Matched repository configuration (null when permissive/unconfigured) */
+  config: RepositoryConfig | null;
+  /** Storage prefix for R2/KV isolation */
+  storagePrefix: string;
+}
+
+/**
  * Automated triaging configuration
  */
 export interface TriagingConfig {

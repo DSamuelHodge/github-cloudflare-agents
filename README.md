@@ -139,10 +139,10 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
   - **Completed:** January 12, 2026
 
 ### Phase 3: Agentic Superpowers
-- [ ] **Automated Triaging**: Allow the agent to automatically apply labels like `needs-more-info`, `confirmed-bug`, or assign issues to specific team members based on content.
-- [ ] **PR Review Mode**: Extend the agent to review Pull Requests, checking for common pitfalls, style violations, and suggesting optimizations.
+- [x] **Automated Triaging**: Allow the agent to automatically apply labels like `needs-more-info`, `confirmed-bug`, or assign issues to specific team members based on content.
+- [x] **PR Review Mode**: Extend the agent to review Pull Requests, checking for common pitfalls, style violations, and suggesting optimizations.
 - [ ] **Code Fix Suggestions (Enhanced)**: Move beyond suggestions to verified code fixes tested in Container worktrees before PR creation.
-- [ ] **Multi-Repository Support**: Enable agent to work across multiple repositories with shared worktree storage in R2.
+- [x] **Multi-Repository Support**: Enable agent to work across multiple repositories with shared worktree storage in R2.
 
 ### Phase 4: Operations & Ecosystem
 - [ ] **Multi-Model Fallback**: Implement logic to switch between Gemini models or fallback to OpenAI/Anthropic if one provider is unavailable.

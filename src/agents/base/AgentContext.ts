@@ -4,12 +4,14 @@
 
 import type { AgentContext, AgentLogger, AgentMetrics, AgentEnv } from '../../types/agents';
 import type { GitHubEvent } from '../../types/events';
+import type { RepositoryContext } from '../../types/repository';
 
 export class AgentExecutionContext implements AgentContext {
   requestId: string;
   timestamp: Date;
   eventType: string;
   payload: unknown;
+  repository?: RepositoryContext;
   env: AgentEnv;
   logger: AgentLogger;
   metrics: AgentMetrics;
@@ -21,12 +23,14 @@ export class AgentExecutionContext implements AgentContext {
     event: GitHubEvent,
     env: AgentEnv,
     logger: AgentLogger,
-    metrics: AgentMetrics
+    metrics: AgentMetrics,
+    repository?: RepositoryContext
   ) {
     this.requestId = requestId;
     this.timestamp = new Date();
     this.eventType = event.type;
     this.payload = event.payload;
+    this.repository = repository;
     this.env = env;
     this.logger = logger;
     this.metrics = metrics;

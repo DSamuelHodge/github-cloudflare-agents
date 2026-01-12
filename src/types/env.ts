@@ -20,6 +20,7 @@ export interface Env {
   // Variables
   GEMINI_MODEL?: string;
   TARGET_REPO?: string;
+  REPO_CONFIG?: string;
   LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
   
   // R2 FUSE mount configuration (variables - Phase 2.4b)
@@ -52,6 +53,7 @@ export interface WorkerVars {
   GEMINI_MODEL: string;
   GITHUB_BOT_USERNAME: string;
   TARGET_REPO?: string;
+  REPO_CONFIG?: string;
   LOG_LEVEL?: string;
 }
 
