@@ -3,8 +3,6 @@
  */
 
 import type { IAgent, AgentContext, AgentResult, AgentRegistration } from '../types/agents';
-import type { GitHubEvent } from '../types/events';
-import { AgentExecutionContext } from './base/AgentContext';
 import { IssueResponderAgent } from './issue-responder/agent';
 import { ContainerTestAgent } from './container-test/agent';
 import { PRAgent } from './pr-agent/agent';
@@ -29,7 +27,7 @@ export class AgentRegistry {
   /**
    * Register an agent
    */
-  register(agent: IAgent, config?: any): void {
+  register(agent: IAgent, _config?: Record<string, unknown>): void {
     if (this.agents.has(agent.name)) {
       throw new Error(`Agent ${agent.name} is already registered`);
     }

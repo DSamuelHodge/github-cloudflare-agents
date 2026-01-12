@@ -3,7 +3,7 @@
  * Phase 2.5: Parallel Multi-Solution Testing
  */
 
-import type { TestJob, TestResult } from './containers';
+import type { TestResult } from './containers';
 
 /**
  * Solution variant for parallel testing

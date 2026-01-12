@@ -95,6 +95,16 @@ export class WebhookVerificationError extends AgentError {
 }
 
 /**
+ * Authentication error (Phase 1.5.4)
+ */
+export class AuthenticationError extends AgentError {
+  constructor(message: string = 'Authentication failed') {
+    super(message, 'AUTHENTICATION_FAILED', 401);
+    this.name = 'AuthenticationError';
+  }
+}
+
+/**
  * Rate limit error
  */
 export class RateLimitError extends AgentError {

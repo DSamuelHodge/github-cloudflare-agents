@@ -4,7 +4,7 @@
  */
 
 import type { Env } from '../../types/env';
-import type { ProgressIndicator, GitHubCommentUpdate } from '../../types/streaming';
+import type { ProgressIndicator } from '../../types/streaming';
 import { Logger } from '../../utils/logger';
 
 export class GitHubStreamUpdater {

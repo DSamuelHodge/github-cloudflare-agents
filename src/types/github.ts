@@ -63,3 +63,34 @@ export interface GitHubCommentResponse {
   html_url: string;
   id: number;
 }
+
+/**
+ * GitHub repository file content types
+ */
+export interface GitHubFileContent {
+  type: 'file' | 'dir' | 'symlink' | 'submodule';
+  encoding?: 'base64';
+  size: number;
+  name: string;
+  path: string;
+  content?: string;
+  sha: string;
+  url: string;
+  git_url: string;
+  html_url: string;
+  download_url: string | null;
+}
+
+export interface GitHubDirectoryContent {
+  type: 'file' | 'dir' | 'symlink' | 'submodule';
+  size: number;
+  name: string;
+  path: string;
+  sha: string;
+  url: string;
+  git_url: string;
+  html_url: string;
+  download_url: string | null;
+}
+
+export type GitHubContent = GitHubFileContent | GitHubDirectoryContent[];

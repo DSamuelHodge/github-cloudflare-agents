@@ -2,6 +2,9 @@
  * System prompts for Issue Responder Agent
  */
 
+import type { ExternalContext } from '../../../types/context';
+import type { ConversationMessage } from '../../../types/conversation';
+
 export function getSystemPrompt(): string {
   return `You are an expert technical support assistant helping developers troubleshoot issues in their GitHub repositories.
 
@@ -21,21 +24,58 @@ Guidelines:
 - If the issue is unclear, ask clarifying questions`;
 }
 
-export function buildIssuePrompt(issue: { title: string; body: string | null }): string {
-  return `A user has opened a GitHub issue that needs troubleshooting assistance.
+export function buildIssuePrompt(
+  issue: { title: string; body: string | null },
+  context?: ExternalContext,
+  conversationHistory?: ConversationMessage[]
+): string {
+  let prompt = `A user has opened a GitHub issue that needs troubleshooting assistance.
 
 **Issue Title:** ${issue.title}
 
 **Issue Description:**
-${issue.body || 'No description provided.'}
+${issue.body || 'No description provided.'}`;
 
-Please analyze this issue and provide 1-3 possible solutions. Format your response with:
+  // Include conversation history if available
+  if (conversationHistory && conversationHistory.length > 0) {
+    prompt += '\n\n**Previous Conversation:**\n';
+    for (const msg of conversationHistory) {
+      const role = msg.role === 'user' ? 'User' : 'You (Assistant)';
+      prompt += `\n**${role}** (${msg.author}, ${new Date(msg.timestamp).toLocaleString()}):\n${msg.content}\n`;
+    }
+    prompt += '\n*Please take into account the previous conversation when formulating your response.*\n';
+  }
+
+  // Inject external context if provided
+  if (context) {
+    if (context.files && context.files.length > 0) {
+      prompt += '\n\n**Referenced Files from Repository:**\n';
+      for (const file of context.files) {
+        prompt += `\n\`${file.path}\` (${file.lineCount || 'unknown'} lines):\n\`\`\`${file.language || ''}\n${file.content}\n\`\`\`\n`;
+      }
+    }
+
+    if (context.documentation && context.documentation.length > 0) {
+      prompt += '\n\n**Relevant Documentation:**\n';
+      for (const doc of context.documentation) {
+        prompt += `\n**${doc.title}** (${doc.source}):\n${doc.content}\n`;
+      }
+    }
+
+    if (context.additionalNotes) {
+      prompt += `\n\n**Additional Context:**\n${context.additionalNotes}\n`;
+    }
+  }
+
+  prompt += `\n\nPlease analyze this issue and provide 1-3 possible solutions. Format your response with:
 1. A brief analysis of the problem
 2. Numbered solutions (1-3) with clear steps
 3. Code snippets in Markdown code blocks where applicable
 4. References to documentation at the bottom
 
 Keep your response helpful, actionable, and well-formatted for GitHub.`;
+
+  return prompt;
 }
 
 export function formatGitHubComment(aiContent: string, username: string): string {

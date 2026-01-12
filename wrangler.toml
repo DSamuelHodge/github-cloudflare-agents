@@ -19,6 +19,7 @@ R2_BUCKET_NAME = "github-ai-agent-artifacts"
 # GITHUB_TOKEN - GitHub Personal Access Token with repo:write permissions
 # GEMINI_API_KEY - Gemini API key from Google AI Studio (OpenAI-compatible endpoint)
 # GITHUB_WEBHOOK_SECRET - Optional: GitHub webhook secret for signature verification
+# API_SECRET_TOKEN - Bearer token for securing /index-docs endpoint (Phase 1.5.4)
 # AWS_ACCESS_KEY_ID - R2 API token Access Key ID (for FUSE mount)
 # AWS_SECRET_ACCESS_KEY - R2 API token Secret Access Key (for FUSE mount)
 
@@ -41,12 +42,21 @@ R2_BUCKET_NAME = "github-ai-agent-artifacts"
 # tag = "v1"
 # new_sqlite_classes = ["TestContainer"]
 
-# R2 bucket binding for persistent storage (Phase 2.3)
+# R2 bucket binding for persistent storage (Phase 1.5 & Phase 2)
+# R2 FREE TIER: 10 GB storage, 1M Class A ops, 10M Class B ops/month
+# No Workers Paid Plan required for R2!
 # Create bucket with: wrangler r2 bucket create github-ai-agent-artifacts
-# NOTE: Enable R2 in Cloudflare Dashboard first, then uncomment:
 [[r2_buckets]]
 binding = "TEST_ARTIFACTS"
 bucket_name = "github-ai-agent-artifacts"
+
+# KV namespace binding for embeddings (Phase 1.5)
+# NOTE: KV requires Workers Paid Plan ($5/month) for multiple namespaces
+# R2 storage above is FREE and does not require paid plan
+# Created with: wrangler kv namespace create DOC_EMBEDDINGS
+[[kv_namespaces]]
+binding = "DOC_EMBEDDINGS"
+id = "1241fb8495cf4cd0b5f661beef6f41f0"
 
 # Observability
 [observability]

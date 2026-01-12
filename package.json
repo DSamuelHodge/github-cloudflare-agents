@@ -9,6 +9,9 @@
     "tail": "wrangler tail",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts",
+    "lint:strict": "eslint src/**/*.ts --max-warnings 0",
+    "lint:fix": "eslint src/**/*.ts --fix",
     "setup-secrets": "npm run setup:github-token && npm run setup:gemini-key",
     "setup:github-token": "wrangler secret put GITHUB_TOKEN",
     "setup:gemini-key": "wrangler secret put GEMINI_API_KEY",
@@ -32,6 +35,10 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
     "@types/node": "^25.0.6",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
     "typescript": "^5.7.2",
     "vitest": "^4.0.16",
     "wrangler": "^4.58.0"

@@ -13,7 +13,6 @@ import type { Env } from '../../types/env';
 import type {
   ParallelTestJob,
   ParallelTestResult,
-  SolutionVariant,
 } from '../../types/parallel';
 import { ContainerService } from '../../platform/containers/service';
 import { R2StorageService, type ArtifactMetadata, type StoredArtifact } from '../../platform/storage';
@@ -52,7 +51,7 @@ export class ContainerTestAgent extends BaseAgent {
       return false;
     }
 
-    const payload = context.payload as any;
+    const payload = context.payload as { comment?: { body?: string }; action?: string; pull_request?: { head: { ref: string } } };
 
     // Handle issue comments with test trigger
     if (context.eventType === 'issue_comment') {
@@ -82,7 +81,7 @@ export class ContainerTestAgent extends BaseAgent {
       // Initialize container service with full Env
       const fullEnv: Env = {
         ...context.env,
-        TEST_CONTAINER: (context.env as any).TEST_CONTAINER,
+        TEST_CONTAINER: context.env.TEST_ARTIFACTS as unknown as DurableObjectNamespace,
       } as Env;
       
       this.containerService = new ContainerService(fullEnv);
@@ -90,7 +89,7 @@ export class ContainerTestAgent extends BaseAgent {
       // Initialize storage service for artifact persistence
       try {
         this.storageService = new R2StorageService(fullEnv);
-      } catch (e) {
+      } catch {
         context.logger.warn('R2 storage not available, artifacts will not be persisted');
         this.storageService = null;
       }
@@ -254,7 +253,12 @@ export class ContainerTestAgent extends BaseAgent {
       issueNumber?: number;
     };
   } {
-    const payload = context.payload as any;
+    const payload = context.payload as {
+      pull_request?: { head: { ref: string }; number: number };
+      issue?: { number: number; pull_request?: unknown };
+      comment?: { body: string };
+      repository: { name: string; owner: { login: string } };
+    };
 
     let branch = 'main';
     let command = 'npm test';
@@ -440,7 +444,7 @@ export class ContainerTestAgent extends BaseAgent {
    * Check if parallel mode is requested (Phase 2.5)
    */
   private isParallelModeRequested(context: AgentContext): boolean {
-    const payload = context.payload as any;
+    const payload = context.payload as { comment?: { body?: string } };
     
     if (context.eventType === 'issue_comment') {
       const comment = payload.comment?.body || '';

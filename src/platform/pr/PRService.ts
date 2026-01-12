@@ -18,8 +18,10 @@ import { Logger } from '../../utils/logger';
 export class PRService {
   private github: GitHubClient;
   private logger: Logger;
+  private token: string;
 
   constructor(env: Env) {
+    this.token = env.GITHUB_TOKEN;
     this.github = createGitHubClient({
       GITHUB_TOKEN: env.GITHUB_TOKEN,
       GITHUB_BOT_USERNAME: env.GITHUB_BOT_USERNAME || 'ai-agent',
@@ -113,7 +115,7 @@ export class PRService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(this.github as any).config.token}`,
+            'Authorization': `Bearer ${this.token}`,
             'Accept': 'application/vnd.github.v3+json',
           },
           body: JSON.stringify({ reviewers }),
@@ -302,7 +304,7 @@ export class PRService {
       {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${(this.github as any).config.token}`,
+          'Authorization': `Bearer ${this.token}`,
           'Accept': 'application/vnd.github.v3+json',
         },
       }

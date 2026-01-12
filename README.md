@@ -14,19 +14,25 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
 - Cloudflare Wrangler CLI (`npm install -g wrangler`)
 - GitHub Personal Access Token with `repo` scope
 - Gemini API key from Google AI Studio
-- **Cloudflare Workers Paid Plan ($5/month)** — Required for R2 storage (Phase 2 features)
+- **Cloudflare R2 Storage** — Free tier includes 10 GB storage, 1M Class A operations, 10M Class B operations per month (Phase 1.5 & Phase 2 features)
+- **Cloudflare KV Namespace** — Requires Workers Paid Plan ($5/month) for production use (Phase 1.5 documentation embeddings)
 - **Cloudflare Containers Beta Access** — Optional, for container-based testing (Phase 2)
 
 ## Setup
 1. Install dependencies: `npm install`.
 2. Copy `.dev.vars.example` to `.dev.vars` and fill in secrets.
 3. Update `wrangler.toml` with your `GITHUB_REPO` and secrets.
-4. **(Optional - Phase 2)** Enable R2 in Cloudflare Dashboard (requires $5/month paid plan), then create bucket:
+4. **(Phase 1.5 & Phase 2)** Create R2 bucket for documentation chunks and test artifacts (free tier: 10 GB storage):
    ```bash
    wrangler r2 bucket create github-ai-agent-artifacts
    ```
-5. Start local dev server: `npm run dev` (default at `http://localhost:8787`).
-6. Send a GitHub webhook payload to the dev server and verify `/health` returns 200.
+5. **(Phase 1.5)** Create KV namespace for embeddings (requires Workers Paid Plan $5/month):
+   ```bash
+   wrangler kv:namespace create DOC_EMBEDDINGS
+   # Update the namespace ID in wrangler.toml with the output value
+   ```
+6. Start local dev server: `npm run dev` (default at `http://localhost:8787`).
+7. Send a GitHub webhook payload to the dev server and verify `/health` returns 200.
 
 ## Scripts
 - `npm run dev` — Run locally with Wrangler.
@@ -69,12 +75,12 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
 - [x] **Type Safety**: Comprehensive TypeScript interfaces for agents, events, and environment
 - [x] **Documentation**: Complete architecture guide with migration path and agent development examples
 
-### Phase 1.5: Enhanced Context (In Progress)
-- [ ] **Repository Awareness**: Give the agent tools to fetch and read specific files from the repository to provide more accurate, context-aware solutions.
-- [ ] **Documentation RAG**: Implement Retrieval Augmented Generation (RAG) by indexing the project's documentation and Wiki to provide referenced answers.
-- [ ] **Threaded Conversations**: Enable the agent to respond to follow-up comments within the same issue thread using Agents SDK stateful conversations.
+### Phase 1.5: Enhanced Context ✅ COMPLETED
+- [x] **Repository Awareness**: Give the agent tools to fetch and read specific files from the repository to provide more accurate, context-aware solutions.
+- [x] **Documentation RAG**: Implement Retrieval Augmented Generation (RAG) by indexing the project's documentation and Wiki to provide referenced answers.
+- [x] **Threaded Conversations**: Enable the agent to respond to follow-up comments within the same issue thread using stateful conversations stored in KV.
 
-### Phase 2: Container-Based Worktree Integration
+### Phase 2: Container-Based Worktree Integration ✅ COMPLETED
 - [x] **Milestone 2.1: Basic Container Setup** (Week 1-2) ✅
   - Deploy Cloudflare Container with git and Node.js pre-installed
   - Integrate `git-worktree-runner` (gtr) CLI into container image
@@ -100,17 +106,37 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
   - R2 FUSE mount via tigrisfs for filesystem artifact access
   - Proper `git gtr run <branch> <cmd>` pattern per research spec
   
-- [x] **Milestone 2.5: Parallel Multi-Solution Testing** (Week 9-10)
+- [x] **Milestone 2.5: Parallel Multi-Solution Testing** (Week 9-10) ✅
   - Spawn multiple containers with different AI-generated solutions
   - Run tests concurrently across isolated worktrees (solution-a, solution-b, solution-c)
   - Benchmark performance, code coverage, and test pass rates
   - Generate comparative analysis and recommend optimal solution
   
-- [x] **Milestone 2.6: Automated PR Workflow** (Week 11-12)
+- [x] **Milestone 2.6: Automated PR Workflow** (Week 11-12) ✅
   - Auto-create pull requests when container tests pass
   - Include test results, coverage reports, and AI reasoning in PR description
   - Link PR back to original issue with test validation proof
   - Implement `git gtr clean --merged` for automatic worktree cleanup via Cron Triggers
+
+### Phase 2.7: Type Safety Hardening ✅ COMPLETE
+- [x] **ESLint Integration**: Configured ESLint with TypeScript plugin and strict rules
+- [x] **Test Coverage**: Comprehensive test suite with 178 tests across all Phase 2 features
+- [x] **Remove `any` Types**: Refactored codebase to eliminate all explicit `any` usage (14 instances)
+  - **Refactored files (7 stages):**
+    - Stage 1: `src/types/agents.ts` and `src/types/env.ts` (3 instances) - Cloudflare binding types
+    - Stage 2: `src/agents/registry.ts` (1 instance) - Agent config parameter
+    - Stage 3: `src/agents/container-test/agent.ts` (4 instances) - GitHub webhook payloads
+    - Stage 4: `src/agents/pr-agent/agent.ts` (2 instances) - PR workflow payloads
+    - Stage 5: `src/index.new.ts` (1 instance) - Webhook event action
+    - Stage 6: `src/platform/pr/PRService.ts` (2 instances) - GitHub token access
+    - Stage 7: `src/platform/streaming/StreamingService.ts` (1 instance) - WebSocket messages
+  - **Approach used:**
+    - Replaced `any` with inline interface types for webhook payloads
+    - Used `Fetcher` and `Workflow` types from `@cloudflare/workers-types`
+    - Added private token field in PRService for type-safe auth
+    - Inline type assertions for WebSocket message handling
+  - **Result:** Zero `any` types remaining, strict lint mode enabled by default
+  - **Completed:** January 12, 2026
 
 ### Phase 3: Agentic Superpowers
 - [ ] **Automated Triaging**: Allow the agent to automatically apply labels like `needs-more-info`, `confirmed-bug`, or assign issues to specific team members based on content.

@@ -7,7 +7,6 @@ import type {
   ParallelTestResult,
   SolutionTestResult,
   ScoringWeights,
-  DEFAULT_SCORING_WEIGHTS,
 } from '../../types/parallel';
 
 /**
@@ -126,7 +125,6 @@ export class ResultAggregator {
 
     // Determine confidence level
     const passedCount = result.summary.solutionsPassed;
-    const totalCount = result.summary.solutionsTested;
     const isOnlyPassed = passedCount === 1;
     const isPerfect = winnerResult.metrics.passRate === 100;
 

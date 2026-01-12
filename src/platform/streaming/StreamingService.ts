@@ -6,7 +6,6 @@
 import type { Env } from '../../types/env';
 import type {
   StreamMessage,
-  StreamMessageType,
   LogStreamMessage,
   ProgressStreamMessage,
   StatusStreamMessage,
@@ -86,7 +85,7 @@ export class StreamingService {
     });
 
     // Set up error handler
-    server.addEventListener('error', (event) => {
+    server.addEventListener('error', (_event) => {
       this.logger.error('WebSocket error', undefined, { connectionId });
       this.handleConnectionClose(connectionId);
     });
@@ -121,7 +120,7 @@ export class StreamingService {
           this.unsubscribeFromJob(connectionId, message.jobId);
           break;
         default:
-          this.logger.warn('Unknown action', { action: (message as any).action });
+          this.logger.warn('Unknown action', { action: (message as { action: string }).action });
       }
     } catch (error) {
       this.logger.error('Failed to parse client message', error instanceof Error ? error : undefined);

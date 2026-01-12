@@ -11,6 +11,7 @@ export interface Env {
   GITHUB_BOT_USERNAME: string;
   GITHUB_WEBHOOK_SECRET: string;
   GEMINI_API_KEY: string;
+  API_SECRET_TOKEN: string; // Phase 1.5.4: Bearer token for API endpoints
   
   // R2 FUSE mount credentials (secrets - Phase 2.4b)
   AWS_ACCESS_KEY_ID: string;
@@ -29,7 +30,7 @@ export interface Env {
   DURABLE_OBJECTS?: DurableObjectNamespace;
   KV?: KVNamespace;
   R2?: R2Bucket;
-  CONTAINERS?: any; // Cloudflare Containers namespace
+  CONTAINERS?: Fetcher; // Cloudflare Containers namespace
   
   // Container binding (Phase 2: Test execution)
   TEST_CONTAINER: DurableObjectNamespace;
@@ -37,8 +38,11 @@ export interface Env {
   // R2 bucket for test artifacts (Phase 2.3)
   TEST_ARTIFACTS: R2Bucket;
   
+  // KV namespace for document embeddings (Phase 1.5 - Stage 5)
+  DOC_EMBEDDINGS?: KVNamespace;
+  
   // Workflow binding (legacy - will be replaced by agent system)
-  GITHUB_ISSUE_WORKFLOW?: any;
+  GITHUB_ISSUE_WORKFLOW?: Workflow;
 }
 
 /**

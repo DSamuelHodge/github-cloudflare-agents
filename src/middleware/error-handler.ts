@@ -3,7 +3,7 @@
  */
 
 import type { Middleware } from './pipeline';
-import { isAgentError, toAgentError } from '../utils/errors';
+import { toAgentError } from '../utils/errors';
 
 /**
  * Global error handler middleware

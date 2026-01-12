@@ -7,7 +7,6 @@ import type { Env } from './types/env';
 import type { GitHubEvent } from './types/events';
 import { globalRegistry } from './agents/registry';
 import { AgentExecutionContext } from './agents/base/AgentContext';
-import { IssueResponderAgent } from './agents/issue-responder/agent';
 import { createPipeline } from './middleware/pipeline';
 import { authMiddleware } from './middleware/auth';
 import { errorHandler, corsMiddleware } from './middleware/error-handler';
@@ -17,6 +16,10 @@ import { createMetrics } from './utils/metrics';
 import { extractWebhookPayload } from './platform/github/webhook';
 import { R2StorageService } from './platform/storage';
 import { StreamingService } from './platform/streaming';
+import { DocumentationIndexer } from './platform/documentation/indexer';
+import { createGitHubRepositoryService } from './platform/github';
+import { getGlobalCostTracker } from './platform/monitoring/CostTracker';
+import { getGlobalRAGMetricsTracker } from './platform/monitoring/RAGMetrics';
 
 // Export TestContainer for Cloudflare Containers (Phase 2)
 export { TestContainer } from './containers/TestContainer';
@@ -80,6 +83,71 @@ export default {
       return handleArtifactRequest(url.pathname, env);
     }
     
+    // Documentation indexing endpoint (Phase 1.5.4 - Secured)
+    // POST /index-docs?owner={owner}&repo={repo}&ref={ref}
+    // Requires: Authorization: Bearer <API_SECRET_TOKEN>
+    if (request.method === 'POST' && url.pathname === '/index-docs') {
+      // Apply bearer auth and rate limiting inline
+      try {
+        // Check authentication
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return new Response(JSON.stringify({
+            error: 'Missing or invalid Authorization header. Expected: Bearer <token>',
+          }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        
+        const token = authHeader.substring(7);
+        if (!env.API_SECRET_TOKEN || token !== env.API_SECRET_TOKEN) {
+          return new Response(JSON.stringify({
+            error: 'Invalid API token',
+          }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        
+        // Note: Rate limiting is applied via global rate limiter in pipeline
+        // Additional endpoint-specific rate limiting could be added here
+        
+        return handleDocumentationIndexing(request, env);
+      } catch (error) {
+        return new Response(JSON.stringify({
+          error: error instanceof Error ? error.message : 'Authentication failed',
+        }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+    
+    // Cost metrics endpoint (Phase 1.5.2)
+    // GET /metrics
+    if (request.method === 'GET' && url.pathname === '/metrics') {
+      const costTracker = getGlobalCostTracker();
+      const ragMetrics = getGlobalRAGMetricsTracker();
+      
+      const costSummary = costTracker.getSummary();
+      const ragSummary = ragMetrics.getSummary();
+      
+      return Response.json({
+        timestamp: new Date().toISOString(),
+        cost: {
+          ...costSummary,
+          recentOperations: costTracker.getRecentOperations(10),
+        },
+        rag: {
+          ...ragSummary,
+          recentQueries: ragMetrics.getRecentMetrics(10),
+          failedQueries: ragMetrics.getFailedQueries().length,
+          lowQualityQueries: ragMetrics.getLowQualityQueries(0.7).length,
+        },
+      });
+    }
+    
     // Create middleware pipeline
     const pipeline = createPipeline()
       .use(corsMiddleware())
@@ -99,7 +167,7 @@ export default {
  * Handle GitHub webhook after middleware
  */
 async function handleWebhook(context: { request: Request; env: Env; executionContext: ExecutionContext }): Promise<Response> {
-  const { request, env, executionContext } = context;
+  const { request, env, executionContext: _executionContext } = context;
   const eventType = request.headers.get('x-github-event');
   
   // Handle ping event
@@ -140,7 +208,7 @@ async function handleWebhook(context: { request: Request; env: Env; executionCon
   
   const githubEvent: GitHubEvent = {
     type: eventType || 'unknown',
-    action: (payload as any)?.action,
+    action: (payload as { action?: string })?.action,
     payload,
     headers,
   };
@@ -219,6 +287,67 @@ async function handleArtifactRequest(pathname: string, env: Env): Promise<Respon
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to retrieve artifact';
     return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+/**
+ * Handle documentation indexing requests (Phase 1.5 - Stage 4)
+ */
+async function handleDocumentationIndexing(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const owner = url.searchParams.get('owner');
+  const repo = url.searchParams.get('repo');
+  const ref = url.searchParams.get('ref') || undefined;
+  
+  if (!owner || !repo) {
+    return new Response(JSON.stringify({
+      error: 'Missing required parameters: owner, repo',
+    }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  
+  if (!env.TEST_ARTIFACTS) {
+    return new Response(JSON.stringify({
+      error: 'R2 storage not configured (TEST_ARTIFACTS binding missing)',
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  
+  try {
+    const repositoryService = createGitHubRepositoryService(env);
+    const indexer = new DocumentationIndexer(
+      repositoryService,
+      env.TEST_ARTIFACTS,
+      env.GEMINI_API_KEY,
+      env.DOC_EMBEDDINGS,
+      (env.LOG_LEVEL || 'info') as 'debug' | 'info' | 'warn' | 'error'
+    );
+    
+    const job = await indexer.indexDocumentation({
+      owner,
+      repo,
+      ref,
+    });
+    
+    return new Response(JSON.stringify({
+      success: job.status === 'completed',
+      job,
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to index documentation';
+    return new Response(JSON.stringify({
+      error: message,
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

@@ -28,16 +28,18 @@ export class IssueValidationService {
       };
     }
     
-    // Check for target labels
-    const hasTargetLabel = issue.labels.some(label =>
-      this.config.targetLabels.includes(label.name)
-    );
-    
-    if (!hasTargetLabel) {
-      return {
-        shouldProcess: false,
-        reason: `Issue #${issue.number} missing required labels: ${this.config.targetLabels.join(', ')}`,
-      };
+    // Check for target labels (if configured)
+    if (this.config.targetLabels.length > 0) {
+      const hasTargetLabel = issue.labels.some(label =>
+        this.config.targetLabels.includes(label.name)
+      );
+      
+      if (!hasTargetLabel) {
+        return {
+          shouldProcess: false,
+          reason: `Issue #${issue.number} missing required labels: ${this.config.targetLabels.join(', ')}`,
+        };
+      }
     }
     
     // Check target repository if configured

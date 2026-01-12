@@ -4,7 +4,7 @@
  */
 
 import type { AgentConfig } from '../../types/agents';
-import type { PRAgentConfig, DEFAULT_PR_AGENT_CONFIG } from '../../types/pr-workflow';
+import type { PRAgentConfig } from '../../types/pr-workflow';
 
 export interface FullPRAgentConfig extends AgentConfig, PRAgentConfig {}
 

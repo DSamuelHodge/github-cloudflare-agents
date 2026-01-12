@@ -12,7 +12,6 @@ import type { GitHubEvent } from '../../types/events';
 import type { Env } from '../../types/env';
 import type {
   PRWorkflowJob,
-  PRWorkflowStatus,
   PRSummary,
   CreatedPR,
   BranchCleanupResult,
@@ -47,7 +46,11 @@ export class PRAgent extends BaseAgent {
       return false;
     }
 
-    const payload = context.payload as any;
+    const payload = context.payload as {
+      comment?: { body?: string };
+      action?: string;
+      workflow_run?: { conclusion?: string };
+    };
 
     // Handle issue comments with PR creation trigger
     if (context.eventType === 'issue_comment') {
@@ -220,7 +223,12 @@ export class PRAgent extends BaseAgent {
     solution: SolutionVariant;
     testResults?: ParallelTestResult;
   } {
-    const payload = context.payload as any;
+    const payload = context.payload as {
+      solution?: SolutionVariant;
+      repository?: { owner?: { login: string }; name: string };
+      issue?: { number: number };
+      testResults?: ParallelTestResult;
+    };
 
     // Default solution (would come from parallel test results in real scenario)
     const solution: SolutionVariant = payload.solution || {
@@ -276,7 +284,7 @@ export class PRAgent extends BaseAgent {
    */
   private async createPRForSolution(
     job: PRWorkflowJob,
-    context: AgentContext
+    _context: AgentContext
   ): Promise<CreatedPR> {
     if (!this.prService) {
       throw new Error('PRService not initialized');
@@ -328,7 +336,7 @@ export class PRAgent extends BaseAgent {
   private async postTestSummary(
     job: PRWorkflowJob,
     prNumber: number,
-    context: AgentContext
+    _context: AgentContext
   ): Promise<void> {
     if (!this.prService) return;
 

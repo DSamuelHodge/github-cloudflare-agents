@@ -5,10 +5,19 @@
 import type { AIClient } from '../../../platform/ai/client';
 import { getSystemPrompt, buildIssuePrompt } from '../prompts/system-prompt';
 import type { IssueResponderConfig } from '../config';
+import type { ExternalContext } from '../../../types/context';
+import type { ConversationMessage } from '../../../types/conversation';
 
 export interface AIResponse {
   content: string;
   tokensUsed: number;
+}
+
+export interface GenerateResponseOptions {
+  title: string;
+  body: string | null;
+  context?: ExternalContext;
+  conversationHistory?: ConversationMessage[];
 }
 
 export class AIResponseService {
@@ -20,9 +29,11 @@ export class AIResponseService {
   /**
    * Generate AI response for an issue
    */
-  async generateResponse(issue: { title: string; body: string | null }): Promise<AIResponse> {
+  async generateResponse(options: GenerateResponseOptions): Promise<AIResponse> {
+    const { title, body, context, conversationHistory } = options;
+    
     const systemPrompt = getSystemPrompt();
-    const userPrompt = buildIssuePrompt(issue);
+    const userPrompt = buildIssuePrompt({ title, body }, context, conversationHistory);
     
     const result = await this.aiClient.generateCompletion({
       messages: [

@@ -10,8 +10,11 @@ import { defaultConfig, type IssueResponderConfig } from './config';
 import { IssueValidationService } from './services/ValidationService';
 import { AIResponseService } from './services/AIResponseService';
 import { GitHubCommentService } from './services/GitHubCommentService';
-import { createGitHubClient } from '../../platform/github/client';
+import { ContextService } from './services/ContextService';
+import { createGitHubClient, createGitHubRepositoryService } from '../../platform/github';
 import { createAIClient } from '../../platform/ai/client';
+import { ConversationService } from '../../platform/conversation/ConversationService';
+import { getGlobalCostTracker } from '../../platform/monitoring/CostTracker';
 
 export class IssueResponderAgent extends BaseAgent {
   readonly name = 'issue-responder';
@@ -71,7 +74,81 @@ export class IssueResponderAgent extends BaseAgent {
     context.logger.info(`Processing issue #${issue.number} from ${repository.full_name}`);
     
     try {
-      // Step 1: Generate AI response
+      const [owner, repo] = repository.full_name.split('/');
+      
+      // Step 1: Load conversation history (if KV available)
+      let conversationHistory;
+      if (context.env.DOC_EMBEDDINGS) {
+        context.logger.debug('Loading conversation history');
+        const conversationService = new ConversationService(
+          context.env.DOC_EMBEDDINGS,
+          'info'
+        );
+        
+        try {
+          const recentMessages = await conversationService.getRecentMessages(
+            owner,
+            repo,
+            issue.number,
+            5 // Last 5 messages
+          );
+          
+          if (recentMessages.length > 0) {
+            conversationHistory = recentMessages;
+            context.logger.info('Conversation history loaded', {
+              messageCount: recentMessages.length,
+            });
+          }
+        } catch (error) {
+          context.logger.warn('Failed to load conversation history', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+      
+      // Step 2: Gather external context (file references + documentation)
+      let externalContext;
+      if (this.agentConfig.enableFileContext || this.agentConfig.enableRAG) {
+        context.logger.debug('Gathering external context from issue');
+        const repositoryService = createGitHubRepositoryService(context.env);
+        const contextService = new ContextService(
+          repositoryService,
+          this.agentConfig,
+          context.env.GEMINI_API_KEY,
+          context.env.TEST_ARTIFACTS,
+          context.env.DOC_EMBEDDINGS,
+          this.agentConfig.ragSearchConfig
+        );
+        
+        try {
+          externalContext = await contextService.gatherContext({
+            issueTitle: issue.title,
+            issueBody: issue.body,
+            owner,
+            repo,
+          });
+          
+          if (externalContext?.files) {
+            context.logger.info('External context gathered', {
+              filesFound: externalContext.files.length,
+              filePaths: externalContext.files.map(f => f.path),
+              docsFound: externalContext.documentation?.length || 0,
+            });
+          } else if (externalContext?.documentation) {
+            context.logger.info('Documentation context gathered', {
+              docsFound: externalContext.documentation.length,
+              sources: externalContext.documentation.map(d => d.source),
+            });
+          }
+        } catch (error) {
+          context.logger.warn('Failed to gather external context, continuing without', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          externalContext = undefined;
+        }
+      }
+      
+      // Step 3: Generate AI response with all context
       context.logger.debug('Generating AI response');
       const aiClient = createAIClient(context.env);
       const aiService = new AIResponseService(aiClient, this.agentConfig);
@@ -79,10 +156,13 @@ export class IssueResponderAgent extends BaseAgent {
       const aiResponse = await aiService.generateResponse({
         title: issue.title,
         body: issue.body,
+        context: externalContext,
+        conversationHistory,
       });
       
       context.logger.info('AI response generated', {
         tokensUsed: aiResponse.tokensUsed,
+        withContext: !!externalContext,
       });
       
       // Record metrics
@@ -90,12 +170,20 @@ export class IssueResponderAgent extends BaseAgent {
         agent: this.name,
       });
       
-      // Step 2: Post comment to GitHub
+      // Track cost
+      const costTracker = getGlobalCostTracker();
+      const model = context.env.GEMINI_MODEL || 'gemini-2.0-flash';
+      costTracker.trackOperation('issue_response', model, {
+        inputTokens: Math.floor(aiResponse.tokensUsed * 0.8),  // Rough estimate: 80% input
+        outputTokens: Math.floor(aiResponse.tokensUsed * 0.2),  // 20% output
+        totalTokens: aiResponse.tokensUsed,
+      });
+      
+      // Step 3: Post comment to GitHub
       context.logger.debug('Posting comment to GitHub');
       const githubClient = createGitHubClient(context.env);
       const commentService = new GitHubCommentService(githubClient);
       
-      const [owner, repo] = repository.full_name.split('/');
       const commentResult = await commentService.postComment(
         owner,
         repo,
@@ -108,6 +196,30 @@ export class IssueResponderAgent extends BaseAgent {
         commentId: commentResult.commentId,
         commentUrl: commentResult.commentUrl,
       });
+      
+      // Step 4: Store assistant's response in conversation history
+      if (context.env.DOC_EMBEDDINGS) {
+        try {
+          const conversationService = new ConversationService(
+            context.env.DOC_EMBEDDINGS,
+            'info'
+          );
+          
+          await conversationService.addMessage(owner, repo, issue.number, issue.title, {
+            id: commentResult.commentId.toString(),
+            timestamp: new Date().toISOString(),
+            author: context.env.GITHUB_BOT_USERNAME,
+            role: 'assistant',
+            content: aiResponse.content,
+          });
+          
+          context.logger.debug('Response saved to conversation history');
+        } catch (error) {
+          context.logger.warn('Failed to save response to conversation history', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
       
       // Record success metric
       context.metrics.increment('agent.issue_responded', 1, {

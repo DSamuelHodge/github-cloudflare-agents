@@ -2,8 +2,6 @@
  * Core agent system types and interfaces
  */
 
-import type { GitHubIssueWebhookPayload } from './github';
-
 /**
  * Agent execution context passed to all agents
  */
@@ -38,11 +36,15 @@ export interface AgentEnv {
   GEMINI_API_KEY: string;
   GEMINI_MODEL?: string;
   
+  // Storage (Phase 1.5 & Phase 2)
+  TEST_ARTIFACTS?: R2Bucket;
+  DOC_EMBEDDINGS?: KVNamespace;
+  
   // Optional bindings
   DURABLE_OBJECTS?: DurableObjectNamespace;
   KV?: KVNamespace;
   R2?: R2Bucket;
-  CONTAINERS?: any; // Cloudflare Containers binding
+  CONTAINERS?: Fetcher; // Cloudflare Containers binding
 }
 
 /**

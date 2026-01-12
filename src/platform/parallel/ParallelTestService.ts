@@ -16,8 +16,6 @@ import type {
   SolutionVariant,
   SolutionTestResult,
   ParallelExecutionConfig,
-  ScoringWeights,
-  DEFAULT_PARALLEL_CONFIG,
 } from '../../types/parallel';
 import { Logger } from '../../utils/logger';
 

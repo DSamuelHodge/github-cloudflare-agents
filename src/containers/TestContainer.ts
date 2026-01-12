@@ -57,7 +57,7 @@ export class TestContainer extends Container<ContainerEnv> {
   };
 
   constructor(ctx: DurableObjectState, env: ContainerEnv) {
-    super(ctx as DurableObjectState<{}>, env);
+    super(ctx as DurableObjectState<Record<string, never>>, env);
     // Set R2 FUSE credentials from Worker secrets
     this.envVars.AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID || '';
     this.envVars.AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY || '';
