@@ -1,0 +1,26 @@
+name: Phase 5 Infra Validation
+
+on:
+  pull_request:
+    branches: [ main, 'feature/*', 'release/*' ]
+    paths: [ 'src/**', 'tests/**', 'docs/**', '.github/workflows/**' ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install
+        run: npm ci
+      - name: Type check
+        run: npm run type-check
+      - name: Lint (strict)
+        run: npm run lint:strict
+      - name: Run tests
+        run: npm test -- --runInBand
+      - name: Sandbox smoke test
+        run: npm test tests/sandbox.spec.ts -- --runInBand
