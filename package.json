@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
-    "test": "vitest run",
+    "test": "vitest run \"tests/**/*.spec.ts\"",
     "type-check": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
     "lint:strict": "eslint src/**/*.ts --max-warnings 0",
