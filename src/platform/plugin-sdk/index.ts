@@ -1,4 +1,5 @@
-import type { PluginManifest, PluginCapability } from './types';
+import type { PluginManifest } from './types';
+import { PluginCapability } from './types';
 
 export function isPluginManifest(value: unknown): value is PluginManifest {
   if (typeof value !== 'object' || value === null) return false;
@@ -33,5 +34,6 @@ export function validateManifest(manifest: unknown): { valid: true; manifest: Pl
   if (typeof m.entrypoint !== 'string' || m.entrypoint.trim().length === 0) errors.push('entrypoint is required');
 
   if (errors.length > 0) return { valid: false, errors };
-  return { valid: true, manifest: m as PluginManifest };
+  // m has already been validated; cast via unknown to satisfy TS
+  return { valid: true, manifest: m as unknown as PluginManifest };
 }

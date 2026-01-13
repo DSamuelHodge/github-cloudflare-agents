@@ -1,4 +1,5 @@
 import type { PluginManifest } from '../plugin-sdk/types';
+import { PluginCapability } from '../plugin-sdk/types';
 
 export interface SandboxOptions {
   timeoutMs?: number;
@@ -18,15 +19,15 @@ export class SandboxRunner {
 
   // NOTE: This is a spec-level implementation that performs static checks.
   // Actual runtime sandboxing (container or DO) is out-of-scope for Stage 1.
-  public async execute(manifest: PluginManifest, input: unknown): Promise<ExecutionResult> {
+  public async execute(manifest: PluginManifest, _input: unknown): Promise<ExecutionResult> {
     const start = Date.now();
     // simple policy enforcement
-    if (this.opts.denyNetwork && manifest.capabilities.includes('network' as any)) {
+    if (this.opts.denyNetwork && manifest.capabilities.includes(PluginCapability.NETWORK)) {
       return { success: false, error: 'network capability is not allowed in this sandbox', durationMs: Date.now() - start };
     }
 
     // disallow filesystem unless explicit
-    if (manifest.capabilities.includes('filesystem' as any) && !manifest.capabilities.includes('filesystem' as any)) {
+    if (manifest.capabilities.includes(PluginCapability.FILESYSTEM) && !manifest.capabilities.includes(PluginCapability.FILESYSTEM)) {
       return { success: false, error: 'filesystem capability not permitted', durationMs: Date.now() - start };
     }
 
