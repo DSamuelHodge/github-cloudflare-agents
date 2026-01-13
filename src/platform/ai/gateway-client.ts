@@ -183,6 +183,14 @@ export class GatewayAIClient {
       // Transform response to OpenAI format
       const completion = endpoint.transformResponse(data);
 
+      // Validate that we have at least one choice
+      if (!completion.choices || completion.choices.length === 0) {
+        throw new AgentError(
+          `Invalid response from ${this.config.provider}: no choices returned`,
+          'INVALID_RESPONSE'
+        );
+      }
+
       this.logger.info('Gateway request successful', {
         provider: this.config.provider,
         model: completion.model,
@@ -227,59 +235,22 @@ export class GatewayAIClient {
   }
 
   /**
-   * Gemini endpoint configuration
+   * Gemini endpoint configuration (uses OpenAI-compatible /compat endpoint)
    */
   private getGeminiEndpoint(): ProviderEndpoint {
-    const model = this.config.model || 'gemini-2.0-flash-exp';
-    
     return {
-      path: `/google-ai-studio/v1beta/models/${model}:generateContent`,
+      path: '/compat/v1/chat/completions',
       headers: {},
-      transformRequest: (req: OpenAIChatCompletionRequest): GeminiRequest => {
+      transformRequest: (req: OpenAIChatCompletionRequest): OpenAIChatCompletionRequest => {
+        // AI Gateway handles Gemini conversion, pass through OpenAI format
         return {
-          contents: req.messages.map((msg: OpenAIMessage) => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }],
-          })),
-          generationConfig: {
-            temperature: req.temperature,
-            maxOutputTokens: req.max_tokens,
-          },
+          ...req,
+          model: req.model || 'google-ai-studio/gemini-2.0-flash-exp',
         };
       },
       transformResponse: (res: unknown): OpenAIChatCompletionResponse => {
-        const geminiRes = res as GeminiResponse;
-        const candidate = geminiRes.candidates?.[0];
-
-        if (!candidate || !candidate.content) {
-          throw new AgentError('Invalid Gemini response: no candidates', 'INVALID_RESPONSE');
-        }
-
-        return {
-          id: `gemini-${Date.now()}`,
-          object: 'chat.completion',
-          created: Date.now(),
-          model: this.config.model || 'gemini-2.0-flash-exp',
-          choices: [
-            {
-              index: 0,
-              message: {
-                role: 'assistant',
-                content: candidate.content.parts[0]?.text || '',
-              },
-              finish_reason: (candidate.finishReason?.toLowerCase() || 'stop') as 'stop' | 'length' | 'content_filter' | 'tool_calls',
-            },
-          ],
-          usage: geminiRes.usageMetadata ? {
-            prompt_tokens: geminiRes.usageMetadata.promptTokenCount,
-            completion_tokens: geminiRes.usageMetadata.candidatesTokenCount,
-            total_tokens: geminiRes.usageMetadata.totalTokenCount,
-          } : {
-            prompt_tokens: 0,
-            completion_tokens: 0,
-            total_tokens: 0,
-          },
-        };
+        // AI Gateway returns OpenAI format, pass through
+        return res as OpenAIChatCompletionResponse;
       },
     };
   }
@@ -303,53 +274,22 @@ export class GatewayAIClient {
   }
 
   /**
-   * Anthropic endpoint configuration
+   * Anthropic endpoint configuration (uses OpenAI-compatible /compat endpoint)
    */
   private getAnthropicEndpoint(): ProviderEndpoint {
     return {
-      path: '/anthropic/v1/messages',
-      headers: {
-        'anthropic-version': '2023-06-01',
-      },
-      transformRequest: (req: OpenAIChatCompletionRequest): AnthropicRequest => {
+      path: '/compat/v1/chat/completions',
+      headers: {},
+      transformRequest: (req: OpenAIChatCompletionRequest): OpenAIChatCompletionRequest => {
+        // AI Gateway handles Anthropic conversion, pass through OpenAI format
         return {
-          model: req.model || 'claude-3-5-sonnet-20241022',
-          messages: req.messages.map((msg: OpenAIMessage) => ({
-            role: msg.role === 'assistant' ? 'assistant' : 'user',
-            content: msg.content,
-          })),
-          max_tokens: req.max_tokens || 1024,
-          temperature: req.temperature,
+          ...req,
+          model: req.model || 'anthropic/claude-3-5-sonnet-20241022',
         };
       },
       transformResponse: (res: unknown): OpenAIChatCompletionResponse => {
-        const anthropicRes = res as AnthropicResponse;
-
-        if (!anthropicRes.content || anthropicRes.content.length === 0) {
-          throw new AgentError('Invalid Anthropic response: no content', 'INVALID_RESPONSE');
-        }
-
-        return {
-          id: anthropicRes.id,
-          object: 'chat.completion',
-          created: Date.now(),
-          model: anthropicRes.model,
-          choices: [
-            {
-              index: 0,
-              message: {
-                role: 'assistant',
-                content: anthropicRes.content[0]?.text || '',
-              },
-              finish_reason: (anthropicRes.stop_reason || 'stop') as 'stop' | 'length' | 'content_filter' | 'tool_calls',
-            },
-          ],
-          usage: {
-            prompt_tokens: anthropicRes.usage.input_tokens,
-            completion_tokens: anthropicRes.usage.output_tokens,
-            total_tokens: anthropicRes.usage.input_tokens + anthropicRes.usage.output_tokens,
-          },
-        };
+        // AI Gateway returns OpenAI format, pass through
+        return res as OpenAIChatCompletionResponse;
       },
     };
   }

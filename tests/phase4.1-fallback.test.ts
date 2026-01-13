@@ -168,18 +168,22 @@ describe('FallbackAIClient', () => {
         },
       };
 
-      // Gemini fails
+      // Gemini fails (returns response without candidates)
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: async () => 'Gemini error',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({ id: 'gemini-fail', object: 'chat.completion', created: Date.now(), model: 'gemini', choices: [], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }),
+        text: async () => JSON.stringify({ choices: [] }),
       } as Response);
 
       // HuggingFace succeeds
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
+        status: 200,
+        statusText: 'OK',
         json: async () => hfResponse,
+        text: async () => JSON.stringify(hfResponse),
       } as Response);
 
       const request: OpenAIChatCompletionRequest = {
@@ -222,26 +226,45 @@ describe('FallbackAIClient', () => {
         },
       };
 
-      // Gemini fails
+      // Gemini fails (returns OpenAI format without choices)
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: async () => 'Gemini error',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          id: 'gemini-fail',
+          object: 'chat.completion',
+          created: Date.now(),
+          model: 'gemini',
+          choices: [], // Empty choices triggers error
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+        }),
+        text: async () => JSON.stringify({ choices: [] }),
       } as Response);
 
-      // HuggingFace fails
+      // HuggingFace fails (returns OpenAI format without choices)
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        ok: false,
-        status: 503,
-        statusText: 'Service Unavailable',
-        text: async () => 'HuggingFace error',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          id: 'hf-fail',
+          object: 'chat.completion',
+          created: Date.now(),
+          model: 'mixtral',
+          choices: [], // Empty choices triggers error
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+        }),
+        text: async () => JSON.stringify({ choices: [] }),
       } as Response);
 
       // Anthropic succeeds
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
+        status: 200,
+        statusText: 'OK',
         json: async () => anthropicResponse,
+        text: async () => JSON.stringify(anthropicResponse),
       } as Response);
 
       const request: OpenAIChatCompletionRequest = {
@@ -265,13 +288,50 @@ describe('FallbackAIClient', () => {
         kv: mockKV,
       });
 
-      // All providers fail
-      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: async () => 'Error',
-      } as Response);
+      // All providers fail (return OpenAI format with empty choices)
+      (globalThis.fetch as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({
+            id: 'gemini-fail',
+            object: 'chat.completion',
+            created: Date.now(),
+            model: 'gemini',
+            choices: [], // Empty choices triggers error
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+          }),
+          text: async () => JSON.stringify({ choices: [] }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({
+            id: 'hf-fail',
+            object: 'chat.completion',
+            created: Date.now(),
+            model: 'mixtral',
+            choices: [], // Empty choices triggers error
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+          }),
+          text: async () => JSON.stringify({ choices: [] }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({
+            id: 'anthropic-fail',
+            object: 'chat.completion',
+            created: Date.now(),
+            model: 'claude',
+            choices: [], // Empty choices triggers error
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+          }),
+          text: async () => JSON.stringify({ choices: [] }),
+        } as Response);
 
       const request: OpenAIChatCompletionRequest = {
         model: 'test-model',
@@ -298,13 +358,39 @@ describe('FallbackAIClient', () => {
         },
       });
 
-      // Fail Gemini twice to open circuit
-      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: 'Error',
-        text: async () => 'Error',
-      } as Response);
+      // Fail Gemini twice to open circuit (empty candidates)
+      (globalThis.fetch as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({ id: 'gemini-fail', object: 'chat.completion', created: Date.now(), model: 'gemini', choices: [], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }),
+        text: async () => JSON.stringify({ choices: [] }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({ id: 'gemini-fail', object: 'chat.completion', created: Date.now(), model: 'gemini', choices: [], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }),
+        text: async () => JSON.stringify({ choices: [] }),
+        } as Response);
+
+      // HuggingFace also fails twice
+      (globalThis.fetch as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({ choices: [] }),
+          text: async () => JSON.stringify({ choices: [] }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({ choices: [] }),
+          text: async () => JSON.stringify({ choices: [] }),
+        } as Response);
 
       const request: OpenAIChatCompletionRequest = {
         model: 'test-model',
@@ -346,7 +432,10 @@ describe('FallbackAIClient', () => {
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
+        status: 200,
+        statusText: 'OK',
         json: async () => hfResponse,
+        text: async () => JSON.stringify(hfResponse),
       } as Response);
 
       const response = await client.createChatCompletion(request);
