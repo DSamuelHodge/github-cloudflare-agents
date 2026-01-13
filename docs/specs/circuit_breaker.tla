@@ -1,23 +1,11 @@
 ---- MODULE circuit_breaker ----
 EXTENDS Naturals, Sequences, TLC
 
-(************************************************************************)
-(* Model: Circuit Breaker state machine                                        *)
-(************************************************************************)
-
-\* CONSTANTS removed for local model run (values inlined)
-    \* FailureThreshold == 2
-    \* SuccessThreshold == 2
-    \* MaxFailureCount == 3
+CONSTANT FailureThreshold, SuccessThreshold, MaxFailureCount
 
 VARIABLES state, failureCount, successCount
 
-States == {"CLOSED", "OPEN", "HALF_OPEN"}
-
-\* Model constants inlined for local checks
-FailureThreshold == 2
-SuccessThreshold == 2
-MaxFailureCount == 3
+vars == <<state, failureCount, successCount>>
 
 Init ==
     /\ state = "CLOSED"
@@ -26,49 +14,60 @@ Init ==
 
 \* Actions
 RecordFailure ==
-    /\ (state = "CLOSED")
+    /\ state = "CLOSED"
+    /\ failureCount < MaxFailureCount
     /\ failureCount' = failureCount + 1
     /\ successCount' = successCount
-    /\ IF failureCount' >= 2 THEN state' = "OPEN" ELSE state' = "CLOSED"
+    /\ IF failureCount' >= FailureThreshold 
+       THEN state' = "OPEN" 
+       ELSE state' = "CLOSED"
 
 RecordFailureHalfOpen ==
-    /\ (state = "HALF_OPEN")
+    /\ state = "HALF_OPEN"
+    /\ failureCount < MaxFailureCount
     /\ state' = "OPEN"
     /\ failureCount' = failureCount + 1
     /\ successCount' = 0
 
 RecordSuccessClosed ==
-    /\ (state = "CLOSED")
+    /\ state = "CLOSED"
     /\ successCount' = 0
     /\ failureCount' = 0
     /\ state' = "CLOSED"
 
 RecordSuccessHalfOpen ==
-    /\ (state = "HALF_OPEN")
+    /\ state = "HALF_OPEN"
     /\ successCount' = successCount + 1
     /\ failureCount' = 0
-    /\ IF successCount' >= 2 THEN state' = "CLOSED" ELSE state' = "HALF_OPEN"
+    /\ IF successCount' >= SuccessThreshold 
+       THEN state' = "CLOSED" 
+       ELSE state' = "HALF_OPEN"
 
 TimeoutOpenToHalfOpen ==
-    /\ (state = "OPEN")
+    /\ state = "OPEN"
     /\ state' = "HALF_OPEN"
     /\ successCount' = 0
     /\ failureCount' = 0
 
-\* Unchanged variables
-Unchanged == state' = state /\ failureCount' = failureCount /\ successCount' = successCount
-
 Next ==
-    RecordFailure
+    \/ RecordFailure
     \/ RecordFailureHalfOpen
     \/ RecordSuccessClosed
     \/ RecordSuccessHalfOpen
     \/ TimeoutOpenToHalfOpen
 
 \* Properties
-Safety == (state = "OPEN") => failureCount >= FailureThreshold
+TypeOK ==
+    /\ state \in {"CLOSED", "HALF_OPEN", "OPEN"}
+    /\ failureCount \in 0..MaxFailureCount
+    /\ successCount \in 0..SuccessThreshold
 
-\* For TLC: statesubset bound
-Spec == Init /\ [][Next]_<<state, failureCount, successCount>>
+Safety == 
+    \/ state /= "OPEN"
+    \/ failureCount >= FailureThreshold
+    \/ successCount < SuccessThreshold
+
+\* Temporal specification
+Spec == Init /\ [][Next]_vars
 
 =============================================================================
