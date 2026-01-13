@@ -115,7 +115,6 @@ export class FallbackAIClient {
     const gf = (globalThis as unknown as { fetch?: any }).fetch;
     if (gf && typeof gf.mockReset === 'function') {
       gf.mockReset();
-      this.logger.debug('Reset global fetch mock (test environment)');
     }
   }
 
@@ -144,7 +143,7 @@ export class FallbackAIClient {
       if (s.state !== 'OPEN') { allOpen = false; break; }
     }
 
-    this.logger.debug('Provider open-status pre-check', { allOpen });
+
 
     for (const provider of this.providers) {
       try {
@@ -152,7 +151,6 @@ export class FallbackAIClient {
         const circuit = this.circuitBreakers.get(provider);
         if (circuit) {
           const state = await circuit.getState();
-          this.logger.debug('Provider circuit state', { provider, state: state.state });
           if (state.state === 'OPEN' && !allOpen) {
             this.logger.info('Skipping provider due to OPEN circuit breaker', { provider });
             continue; // do not record as attempted

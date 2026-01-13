@@ -85,11 +85,7 @@ export class GatewayAIClient {
         url = `${this.baseUrl}/google-ai-studio/v1beta/models/${modelForUrl}:generateContent`;
       }
     try {
-      this.logger.debug('Sending request to gateway', {
-        provider: this.config.provider,
-        model: request.model,
-        messages: request.messages.length,
-      });
+
 
       // Transform request to provider format
       const providerRequest = endpoint.transformRequest(request);
