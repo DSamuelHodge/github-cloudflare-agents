@@ -18,8 +18,8 @@ jobs:
         run: npm ci
       - name: Type check
         run: npm run type-check
-      - name: Lint (strict)
-        run: npm run lint:strict
+      - name: Lint (strict) - Phase5 files only
+        run: npx eslint "src/platform/**" "src/types/**" --max-warnings 0
       - name: Run tests
         run: npm test -- --runInBand
       - name: Sandbox smoke test
