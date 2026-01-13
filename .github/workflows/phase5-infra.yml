@@ -24,3 +24,5 @@ jobs:
         run: npm test -- --runInBand
       - name: Sandbox smoke test
         run: npm test tests/sandbox.spec.ts -- --runInBand
+      - name: Stage 2: runtime & DO tests
+        run: npm test tests/sandbox-runtime.spec.ts tests/durable/sandbox-do.spec.ts -- --runInBand
