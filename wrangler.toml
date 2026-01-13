@@ -22,6 +22,11 @@ R2_BUCKET_NAME = "github-ai-agent-artifacts"
 # API_SECRET_TOKEN - Bearer token for securing /index-docs endpoint (Phase 1.5.4)
 # AWS_ACCESS_KEY_ID - R2 API token Access Key ID (for FUSE mount)
 # AWS_SECRET_ACCESS_KEY - R2 API token Secret Access Key (for FUSE mount)
+# RESEND_API_KEY - Resend.com API key for email notifications (set via `wrangler secret put RESEND_API_KEY`)  # required for email alerts
+# ALERT_SLACK_WEBHOOK - Slack incoming webhook URL (set via `wrangler secret put ALERT_SLACK_WEBHOOK`)  # optional for Slack alerts
+# ALERT_FROM - Email `from` address used for notifications (set via `wrangler secret put ALERT_FROM`)  # required for Resend provider
+# ALERT_STAGING_CHANNEL - Slack channel used for staging/test alerts (optional)
+# ALERT_DEDUPE_WINDOW_MS - Dedupe window in milliseconds for suppressing duplicate alerts (optional, default: 60000)
 
 # Container configuration (Phase 2: Worktree Integration)
 # NOTE: Requires Cloudflare Containers beta access. Comment out if not enabled.
@@ -57,6 +62,12 @@ bucket_name = "github-ai-agent-artifacts"
 [[kv_namespaces]]
 binding = "DOC_EMBEDDINGS"
 id = "1241fb8495cf4cd0b5f661beef6f41f0"
+
+# Local KV namespace for metrics used by MetricsCollector
+[[kv_namespaces]]
+# Binding name expected by code: env.KV
+binding = "KV"
+id = "c57bc9e1db3e4e1b8fa80ac05daa4c71"
 
 # Observability
 [observability]

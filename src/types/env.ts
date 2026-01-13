@@ -57,6 +57,15 @@ export interface Env {
   CIRCUIT_BREAKER_FAILURE_THRESHOLD?: string; // Number of failures before opening circuit (default: 3)
   CIRCUIT_BREAKER_SUCCESS_THRESHOLD?: string; // Number of successes to close circuit (default: 2)
   CIRCUIT_BREAKER_OPEN_TIMEOUT?: string; // Time in ms to stay open (default: 60000)
+
+  // Alerting / Notification configuration (Phase 4.1 Stage 8)
+  RESEND_API_KEY?: string; // API key for Resend email provider (resend.com)
+  ALERT_EMAIL_PROVIDER?: 'resend' | 'sendgrid' | 'smtp';
+  ALERT_FROM?: string; // Email "from" address for notifications (e.g., "noreply@company.com")
+  ALERT_SLACK_WEBHOOK?: string; // Incoming webhook URL for Slack (optional)
+  ALERT_SLACK_BOT_TOKEN?: string; // Bot token if using Slack app (optional)
+  ALERT_STAGING_CHANNEL?: string; // Slack channel for staging notifications
+  ALERT_DEDUPE_WINDOW_MS?: string; // Dedupe window in ms (default: 60000)
 }
 
 /**
@@ -68,6 +77,11 @@ export interface WorkerVars {
   TARGET_REPO?: string;
   REPO_CONFIG?: string;
   LOG_LEVEL?: string;
+  // Alerting variables (wrangler [vars])
+  RESEND_API_KEY?: string;
+  ALERT_SLACK_WEBHOOK?: string;
+  ALERT_FROM?: string;
+  ALERT_STAGING_CHANNEL?: string;
 }
 
 /**

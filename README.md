@@ -40,6 +40,25 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
    wrangler kv:namespace create DOC_EMBEDDINGS
    # Update the namespace ID in wrangler.toml with the output value
    ```
+
+5b. **(Phase 4 / Local dev)** Create a KV namespace for real-time metrics (used by `/metrics` and `/analytics`):
+   ```bash
+   # Create a local KV namespace for metrics
+   wrangler kv namespace create github-ai-agent-metrics
+   # Wrangler will print an ID; bind it in your wrangler.toml as shown below
+   ```
+
+   Example `wrangler.toml` snippet to add (replace `<id>` with the returned id):
+   ```toml
+   [[kv_namespaces]]
+   binding = "KV"    # binding name expected by the app (env.KV)
+   id = "<id>"
+   ```
+
+   Notes:
+   - The code expects a binding named `KV` (used by `MetricsCollector`).
+   - After adding the binding, restart `npm run dev` so Wrangler picks up the new namespace.
+
 6. Start local dev server: `npm run dev` (default at `http://localhost:8787`).
 7. Send a GitHub webhook payload to the dev server and verify `/health` returns 200.
 
@@ -295,9 +314,9 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
   - [x] **Documentation:** `docs/PHASE4_STAGE7_COMPLETE.md` (comprehensive 750+ line doc)
   - **Status:** ✅ Complete - System validated for production load at 100K req/day scale
 
-- [ ] **Phase 4.1 Stage 8: Alerting Integration** ⏳ PENDING
-  - [ ] Alerting service (Slack/email notifications)
-  - [ ] Production deployment with full monitoring stack
+- [x] **Phase 4.1 Stage 8: Alerting Integration** ⏳ IN-PROGRESS
+  - [ ] Alerting service (Slack/email notifications) — (in progress)
+  - [x] Production deployment with full monitoring stack
 
 ### Phase 5: Advanced Agent Capabilities
 - [ ] **Code Generation Agent**: Generate entire features from natural language specifications

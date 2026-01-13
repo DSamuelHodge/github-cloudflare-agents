@@ -29,9 +29,13 @@ export class AnalyticsService implements IAnalyticsService {
   private readonly maxTimeSeriesPoints = 1440; // 24 hours at 1-minute intervals
   private readonly maxAnomalyHistory = 100;
 
-  constructor(metricsCollector: IMetricsCollector, logger?: Logger) {
+  // Optional: Alert handler callback (non-blocking). Accepts a minimal alert payload.
+  private readonly alertHandler?: (alert: { title: string; message: string; severity: 'critical' | 'warning' | 'info'; metadata?: Record<string, unknown> }) => Promise<void>;
+
+  constructor(metricsCollector: IMetricsCollector, logger?: Logger, alertHandler?: (alert: { title: string; message: string; severity: 'critical' | 'warning' | 'info'; metadata?: Record<string, unknown> }) => Promise<void>) {
     this.metricsCollector = metricsCollector;
     this.logger = logger || new Logger();
+    this.alertHandler = alertHandler;
   }
 
   /**
@@ -280,6 +284,24 @@ export class AnalyticsService implements IAnalyticsService {
       this.anomalyHistory.push(...anomalies);
       if (this.anomalyHistory.length > this.maxAnomalyHistory) {
         this.anomalyHistory.splice(0, this.anomalyHistory.length - this.maxAnomalyHistory);
+      }
+
+      // Trigger alerts via optional alert handler (non-blocking)
+      if (this.alertHandler && anomalies.length > 0) {
+        for (const a of anomalies) {
+          (async () => {
+            try {
+              await this.alertHandler({
+                title: `Monitoring: ${a.type}`,
+                message: a.description,
+                severity: a.severity === 'critical' ? 'critical' : 'warning',
+                metadata: { expected: a.expectedValue, actual: a.actualValue, type: a.type },
+              });
+            } catch (err) {
+              this.logger.error('Failed to send alert via alertHandler', err instanceof Error ? err : undefined);
+            }
+          })();
+        }
       }
 
       return anomalies;
