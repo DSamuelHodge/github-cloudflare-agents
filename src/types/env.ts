@@ -44,6 +44,13 @@ export interface Env {
   
   // Workflow binding (legacy - will be replaced by agent system)
   GITHUB_ISSUE_WORKFLOW?: Workflow;
+  
+  // Phase 4.1: Cloudflare AI Gateway configuration
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_GATEWAY_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  AI_PROVIDER?: 'gemini' | 'huggingface' | 'anthropic';
+  AI_MODEL?: string;
 }
 
 /**
