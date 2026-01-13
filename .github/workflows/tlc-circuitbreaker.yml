@@ -20,7 +20,7 @@ jobs:
         run: |
           set -e
           mkdir -p tlc-output
-          docker run --rm \
+          docker run --rm -t \
             -v "$PWD/docs/specs:/specs" \
             -v "$PWD/tlc-output:/tlc-output" \
             maxdiefenbach/tlaplus tlc \
