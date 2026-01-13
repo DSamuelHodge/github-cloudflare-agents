@@ -51,6 +51,12 @@ export interface Env {
   CLOUDFLARE_API_TOKEN?: string;
   AI_PROVIDER?: 'gemini' | 'huggingface' | 'anthropic';
   AI_MODEL?: string;
+  
+  // Phase 4.1 Stage 3: Fallback Strategy
+  AI_FALLBACK_PROVIDERS?: string; // Comma-separated provider chain (e.g., "gemini,huggingface,anthropic")
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD?: string; // Number of failures before opening circuit (default: 3)
+  CIRCUIT_BREAKER_SUCCESS_THRESHOLD?: string; // Number of successes to close circuit (default: 2)
+  CIRCUIT_BREAKER_OPEN_TIMEOUT?: string; // Time in ms to stay open (default: 60000)
 }
 
 /**
