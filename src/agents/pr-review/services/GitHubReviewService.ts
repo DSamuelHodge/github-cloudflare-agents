@@ -36,7 +36,8 @@ export class GitHubReviewService {
    * Submit code review to GitHub
    */
   async submitReview(options: ReviewSubmissionOptions): Promise<ReviewSubmissionResult> {
-    const { owner, repo, pullNumber, _commitId, comments, minSeverity = 'warning' } = options;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { owner, repo, pullNumber, commitId, comments, minSeverity = 'warning' } = options;
 
     // Filter comments by severity threshold
     const filteredComments = this.filterCommentsBySeverity(comments, minSeverity);
