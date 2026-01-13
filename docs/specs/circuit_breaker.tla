@@ -1,4 +1,4 @@
----- MODULE CircuitBreaker ----
+---- MODULE circuit_breaker ----
 EXTENDS Naturals, Sequences, TLC
 
 (************************************************************************)
@@ -15,12 +15,9 @@ VARIABLES state, failureCount, successCount
 States == {"CLOSED", "OPEN", "HALF_OPEN"}
 
 Init ==
-    /
-    state = "CLOSED"
-    /
-    failureCount = 0
-    /
-    successCount = 0
+    /\ state = "CLOSED"
+    /\ failureCount = 0
+    /\ successCount = 0
 
 \* Actions
 RecordFailure ==
