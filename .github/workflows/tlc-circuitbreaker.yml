@@ -15,23 +15,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 11
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
 
-      - name: Download tla2tools.jar
-        run: |
-          TLA_VERSION=v1.8.1
-          curl -L -o tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/${TLA_VERSION}/tla2tools.jar
-
-      - name: Run TLC (model check)
+      - name: Run TLC (model check) via Docker
         run: |
           set -e
           mkdir -p tlc-output
-          # Run TLC and capture output
-          java -cp tla2tools.jar tlc2.TLC -cleanup -deadlock -workers 2 -config docs/specs/circuit_breaker.cfg docs/specs/circuit_breaker.tla 2>&1 | tee tlc-output/tlc.log
+          docker run --rm \
+            -v "$PWD/docs/specs:/specs" \
+            -v "$PWD/tlc-output:/tlc-output" \
+            tlaplus/tlaplus tlc \
+              -cleanup -deadlock -workers 2 \
+              -config /specs/circuit_breaker.cfg /specs/circuit_breaker.tla \
+              2>&1 | tee tlc-output/tlc.log
           TLC_EXIT=${PIPESTATUS[0]:-${PIPESTATUS}}
           echo "$TLC_EXIT" > tlc-output/exitcode.txt
           if [ "$TLC_EXIT" -ne 0 ]; then
