@@ -34,7 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploy
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.CLOUDFLARE_API_TOKEN
+    # Disabled on request: CI deploys cause noise/failures. Use manual `npm run deploy` instead.
+    if: false
     steps:
       - uses: actions/checkout@v4
 
