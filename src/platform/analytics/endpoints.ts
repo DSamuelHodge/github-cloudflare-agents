@@ -3,6 +3,7 @@
  */
 
 import type { Env } from '../../types/env';
+import type { LogLevel } from '../../utils/logger';
 import { createLogger } from '../../utils/logger';
 import { getGlobalPhase3Analytics } from '../../platform/analytics';
 
@@ -14,7 +15,7 @@ export async function handlePhase3Analytics(
   env: Env,
   repositories?: Map<string, { fullName: string }>
 ): Promise<Response> {
-  const logger = createLogger((env.LOG_LEVEL || 'info') as any, {
+  const logger = createLogger((env.LOG_LEVEL || 'info') as unknown as LogLevel, {
     component: 'Phase3Analytics',
   });
 

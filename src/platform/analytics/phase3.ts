@@ -34,7 +34,7 @@ export interface RepositoryMetrics {
   averageExecutionTimeMs: number;
 }
 
-export interface Phase3Analytics {
+export interface Phase3AnalyticsReport {
   timestamp: Date;
   period: {
     startTime: Date;
@@ -69,7 +69,7 @@ export interface Phase3AnalyticsReport {
 /**
  * Analytics collector for Phase 3 agents
  */
-export class Phase3Analytics {
+export class Phase3Analytics implements Phase3AnalyticsReport {
   private logger: AgentLogger;
   private triagingEvents: Array<{ confidence: number; success: boolean; timestamp: Date }> = [];
   private prReviewEvents: Array<{ issuesFound: number; reviewPosted: boolean; success: boolean; timestamp: Date }> = [];
