@@ -69,7 +69,7 @@ export interface Phase3AnalyticsReport {
 /**
  * Analytics collector for Phase 3 agents
  */
-export class Phase3Analytics implements Phase3AnalyticsReport {
+export class Phase3Analytics {
   private logger: AgentLogger;
   private triagingEvents: Array<{ confidence: number; success: boolean; timestamp: Date }> = [];
   private prReviewEvents: Array<{ issuesFound: number; reviewPosted: boolean; success: boolean; timestamp: Date }> = [];
