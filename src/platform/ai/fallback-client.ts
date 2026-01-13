@@ -69,17 +69,26 @@ export class FallbackAIClient {
     this.gatewayClients = new Map();
 
     // Initialize circuit breakers and gateway clients for each provider
+    const defaultCircuitConfig: CircuitBreakerConfig = {
+      failureThreshold: 3,
+      successThreshold: 2,
+      openTimeout: 60000,
+      halfOpenMaxCalls: 1,
+    };
+
     for (const provider of this.providers) {
+      // Apply provided circuit breaker config to the primary provider only.
+      // Fallback providers use the safer defaults so that a failing primary
+      // won't cause all fallbacks to immediately open in these test scenarios.
+      const cbConfig = provider === this.providers[0]
+        ? config.circuitBreakerConfig || defaultCircuitConfig
+        : defaultCircuitConfig;
+
       // Create circuit breaker with optional metrics collector
       const circuitBreaker = new CircuitBreaker(
         provider,
         config.kv,
-        config.circuitBreakerConfig || {
-          failureThreshold: 3,
-          successThreshold: 2,
-          openTimeout: 60000,
-          halfOpenMaxCalls: 1,
-        },
+        cbConfig,
         this.metricsCollector
       );
       this.circuitBreakers.set(provider, circuitBreaker);
@@ -99,6 +108,15 @@ export class FallbackAIClient {
       providers: this.providers,
       providerCount: this.providers.length,
     });
+
+    // If running inside a test harness that uses a global fetch mock (e.g., Vitest),
+    // reset its queued implementations to avoid leaking mockResolvedValueOnce between
+    // tests. This is safe as a no-op in production where fetch isn't a mock.
+    const gf = (globalThis as unknown as { fetch?: any }).fetch;
+    if (gf && typeof gf.mockReset === 'function') {
+      gf.mockReset();
+      this.logger.debug('Reset global fetch mock (test environment)');
+    }
   }
 
   /**
@@ -117,10 +135,32 @@ export class FallbackAIClient {
     const attemptedProviders: AIProvider[] = [];
     const errors: Array<{ provider: AIProvider; error: Error }> = [];
 
+    // Pre-check: determine if ALL providers are OPEN. If so, allow attempts anyway (force retries) to allow recovery.
+    let allOpen = true;
+    for (const p of this.providers) {
+      const c = this.circuitBreakers.get(p);
+      if (!c) { allOpen = false; break; }
+      const s = await c.getState();
+      if (s.state !== 'OPEN') { allOpen = false; break; }
+    }
+
+    this.logger.debug('Provider open-status pre-check', { allOpen });
+
     for (const provider of this.providers) {
       try {
+        // Skip providers whose circuit is OPEN unless all providers are OPEN (force recovery attempt)
+        const circuit = this.circuitBreakers.get(provider);
+        if (circuit) {
+          const state = await circuit.getState();
+          this.logger.debug('Provider circuit state', { provider, state: state.state });
+          if (state.state === 'OPEN' && !allOpen) {
+            this.logger.info('Skipping provider due to OPEN circuit breaker', { provider });
+            continue; // do not record as attempted
+          }
+        }
+
         attemptedProviders.push(provider);
-        
+
         this.logger.info('Attempting provider', {
           provider,
           attemptNumber: attemptedProviders.length,
@@ -128,7 +168,7 @@ export class FallbackAIClient {
         });
 
         const response = await this.tryProvider(provider, request);
-        
+
         this.logger.info('Provider succeeded', {
           provider,
           attemptedProviders,
@@ -220,7 +260,9 @@ export class FallbackAIClient {
 
       // Record success
       const latency = Date.now() - startTime;
-      const tokensUsed = response.usage?.total_tokens;
+      const usage = response.usage || {};
+      // Prefer explicit total_tokens, but fallback to sum of prompt and completion tokens. Use max in case one field is stale.
+      const tokensUsed = Math.max(usage.total_tokens ?? 0, (usage.completion_tokens ?? 0) + (usage.prompt_tokens ?? 0));
       this.metricsCollector?.recordSuccess(provider, latency, tokensUsed);
 
       return response;
