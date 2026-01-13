@@ -477,4 +477,98 @@ describe('FallbackAIClient', () => {
       expect(metrics.huggingface).toBeDefined();
     });
   });
+
+  describe('metrics integration', () => {
+    it('should record metrics when provided', async () => {
+      const mockCollector = {
+        recordRequest: vi.fn(),
+        recordSuccess: vi.fn(),
+        recordFailure: vi.fn(),
+      };
+
+      const client = new FallbackAIClient({
+        providers: ['gemini'],
+        accountId: 'test-account',
+        gatewayId: 'test-gateway',
+        apiToken: 'test-token',
+        kv: mockKV,
+        // @ts-expect-error - Partial mock for testing
+        metricsCollector: mockCollector,
+      });
+
+      const request: OpenAIChatCompletionRequest = {
+        model: 'gemini-2.0-flash-exp',
+        messages: [{ role: 'user', content: 'Test' }],
+      };
+
+      const mockResponse: OpenAIChatCompletionResponse = {
+        id: 'test-id',
+        object: 'chat.completion',
+        created: Date.now(),
+        model: 'gemini-2.0-flash-exp',
+        choices: [{
+          index: 0,
+          message: { role: 'assistant', content: 'Response' },
+          finish_reason: 'stop',
+        }],
+        usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      });
+
+      await client.createChatCompletion(request);
+
+      expect(mockCollector.recordRequest).toHaveBeenCalledWith('gemini');
+      expect(mockCollector.recordSuccess).toHaveBeenCalledWith(
+        'gemini',
+        expect.any(Number),
+        30
+      );
+      expect(mockCollector.recordFailure).not.toHaveBeenCalled();
+    });
+
+    it('should record failures in metrics', async () => {
+      const mockCollector = {
+        recordRequest: vi.fn(),
+        recordSuccess: vi.fn(),
+        recordFailure: vi.fn(),
+      };
+
+      const client = new FallbackAIClient({
+        providers: ['gemini'],
+        accountId: 'test-account',
+        gatewayId: 'test-gateway',
+        apiToken: 'test-token',
+        kv: mockKV,
+        // @ts-expect-error - Partial mock for testing
+        metricsCollector: mockCollector,
+      });
+
+      const request: OpenAIChatCompletionRequest = {
+        model: 'gemini-2.0-flash-exp',
+        messages: [{ role: 'user', content: 'Test' }],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: { message: 'Server error' } }),
+      });
+
+      await expect(client.createChatCompletion(request)).rejects.toThrow();
+
+      expect(mockCollector.recordRequest).toHaveBeenCalledWith('gemini');
+      expect(mockCollector.recordFailure).toHaveBeenCalledWith(
+        'gemini',
+        expect.any(Number),
+        expect.any(String),
+        expect.any(String)
+      );
+      expect(mockCollector.recordSuccess).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -12,6 +12,7 @@ import { CircuitBreaker } from './circuit-breaker';
 import type { OpenAIChatCompletionRequest, OpenAIChatCompletionResponse } from '../../types/openai';
 import type { Env } from '../../types/env';
 import type { CircuitBreakerConfig } from '../../types/circuit-breaker';
+import type { MetricsCollector } from '../monitoring/MetricsCollector';
 
 /**
  * Configuration for fallback AI client
@@ -37,6 +38,9 @@ export interface FallbackAIClientConfig {
   
   /** Model to use for each provider (optional, uses environment default if not provided) */
   models?: Partial<Record<AIProvider, string>>;
+  
+  /** Metrics collector for request tracking (optional) */
+  metricsCollector?: MetricsCollector;
 }
 
 /**
@@ -54,17 +58,19 @@ export class FallbackAIClient {
   private readonly gatewayClients: Map<AIProvider, GatewayAIClient>;
   private readonly providers: AIProvider[];
   private readonly models: Partial<Record<AIProvider, string>>;
+  private readonly metricsCollector?: MetricsCollector;
 
   constructor(private readonly config: FallbackAIClientConfig) {
     this.logger = new Logger('info', { component: 'FallbackAIClient' });
     this.providers = config.providers;
     this.models = config.models || {};
+    this.metricsCollector = config.metricsCollector;
     this.circuitBreakers = new Map();
     this.gatewayClients = new Map();
 
     // Initialize circuit breakers and gateway clients for each provider
     for (const provider of this.providers) {
-      // Create circuit breaker
+      // Create circuit breaker with optional metrics collector
       const circuitBreaker = new CircuitBreaker(
         provider,
         config.kv,
@@ -73,7 +79,8 @@ export class FallbackAIClient {
           successThreshold: 2,
           openTimeout: 60000,
           halfOpenMaxCalls: 1,
-        }
+        },
+        this.metricsCollector
       );
       this.circuitBreakers.set(provider, circuitBreaker);
 
@@ -197,14 +204,35 @@ export class FallbackAIClient {
       );
     }
 
+    // Record request start
+    this.metricsCollector?.recordRequest(provider);
+    const startTime = Date.now();
+
     // Use provider-specific model if configured, otherwise use request model
     const model = this.models[provider] || request.model;
     const providerRequest = { ...request, model };
 
-    // Execute through circuit breaker
-    return circuitBreaker.execute(async () => {
-      return gatewayClient.createChatCompletion(providerRequest);
-    });
+    try {
+      // Execute through circuit breaker
+      const response = await circuitBreaker.execute(async () => {
+        return gatewayClient.createChatCompletion(providerRequest);
+      });
+
+      // Record success
+      const latency = Date.now() - startTime;
+      const tokensUsed = response.usage?.total_tokens;
+      this.metricsCollector?.recordSuccess(provider, latency, tokensUsed);
+
+      return response;
+    } catch (error) {
+      // Record failure
+      const latency = Date.now() - startTime;
+      const errorCode = error instanceof AgentError ? error.code : 'UNKNOWN_ERROR';
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.metricsCollector?.recordFailure(provider, latency, errorCode, errorMessage);
+
+      throw error;
+    }
   }
 
   /**

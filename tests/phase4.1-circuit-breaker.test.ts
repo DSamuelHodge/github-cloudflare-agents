@@ -304,4 +304,87 @@ describe('CircuitBreaker', () => {
       expect(state.successCount).toBe(0);
     });
   });
+
+  describe('metrics integration', () => {
+    it('should record state transitions when metrics collector provided', async () => {
+      const mockCollector = {
+        recordCircuitBreakerStateChange: vi.fn(),
+      };
+
+      // @ts-expect-error - Partial mock for testing
+      const breaker = new CircuitBreaker('gemini', mockKV, config, mockCollector);
+
+      // Trigger transition from CLOSED to OPEN
+      for (let i = 0; i < config.failureThreshold; i++) {
+        try {
+          await breaker.execute(async () => {
+            throw new Error('Test failure');
+          });
+        } catch {
+          // Expected
+        }
+      }
+
+      expect(mockCollector.recordCircuitBreakerStateChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: 'gemini',
+          previousState: 'CLOSED',
+          newState: 'OPEN',
+          reason: 'failure_threshold',
+        })
+      );
+    });
+
+    it('should record HALF_OPEN to CLOSED transition', async () => {
+      const mockCollector = {
+        recordCircuitBreakerStateChange: vi.fn(),
+      };
+
+      // Pre-populate with HALF_OPEN state
+      await mockKV.put(
+        'circuit-breaker:gemini',
+        JSON.stringify({
+          state: 'HALF_OPEN',
+          failureCount: 0,
+          successCount: 0,
+          lastTransitionTime: Date.now(),
+        })
+      );
+
+      // @ts-expect-error - Partial mock for testing
+      const breaker = new CircuitBreaker('gemini', mockKV, config, mockCollector);
+
+      // Trigger successful calls to close circuit
+      for (let i = 0; i < config.successThreshold; i++) {
+        await breaker.execute(async () => 'success');
+      }
+
+      expect(mockCollector.recordCircuitBreakerStateChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: 'gemini',
+          previousState: 'HALF_OPEN',
+          newState: 'CLOSED',
+          reason: 'success_threshold',
+        })
+      );
+    });
+
+    it('should work without metrics collector', async () => {
+      const breaker = new CircuitBreaker('gemini', mockKV, config);
+
+      // Should not throw when metrics collector is not provided
+      for (let i = 0; i < config.failureThreshold; i++) {
+        try {
+          await breaker.execute(async () => {
+            throw new Error('Test failure');
+          });
+        } catch {
+          // Expected
+        }
+      }
+
+      const state = await breaker.getState();
+      expect(state.state).toBe('OPEN');
+    });
+  });
 });

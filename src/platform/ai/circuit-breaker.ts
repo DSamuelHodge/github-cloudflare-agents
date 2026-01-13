@@ -14,6 +14,7 @@ import type {
   CircuitBreakerConfig,
   CircuitBreakerMetrics,
 } from '../../types/circuit-breaker';
+import type { MetricsCollector } from '../monitoring/MetricsCollector';
 
 /**
  * Circuit breaker for AI provider requests
@@ -29,14 +30,17 @@ export class CircuitBreaker {
   private inMemoryState?: CircuitBreakerState;
   private inMemoryCacheTime?: number;
   private readonly cacheTTL = 5000; // 5 seconds in-memory cache
+  private metricsCollector?: MetricsCollector;
 
   constructor(
     private readonly provider: AIProvider,
     private readonly kv: KVNamespace,
-    private readonly config: CircuitBreakerConfig
+    private readonly config: CircuitBreakerConfig,
+    metricsCollector?: MetricsCollector
   ) {
     this.logger = new Logger('info', { component: 'CircuitBreaker', provider });
     this.kvKey = `circuit-breaker:${provider}`;
+    this.metricsCollector = metricsCollector;
   }
 
   /**
@@ -256,6 +260,8 @@ export class CircuitBreaker {
    * Transition circuit breaker to a new state
    */
   private async transition(newState: CircuitState): Promise<void> {
+    const currentState = await this.getState();
+    const previousState = currentState.state;
     const now = Date.now();
     const state: CircuitBreakerState = {
       state: newState,
@@ -266,10 +272,45 @@ export class CircuitBreaker {
 
     await this.saveState(state);
 
+    // Record state change in metrics
+    if (this.metricsCollector && previousState !== newState) {
+      this.metricsCollector.recordCircuitBreakerStateChange({
+        timestamp: now,
+        provider: this.provider,
+        previousState,
+        newState,
+        reason: this.getTransitionReason(previousState, newState, currentState),
+        failureCount: currentState.failureCount,
+        successCount: currentState.successCount,
+      });
+    }
+
     this.logger.info('Circuit breaker state transition', {
       provider: this.provider,
       newState,
     });
+  }
+
+  /**
+   * Determine the reason for a state transition
+   */
+  private getTransitionReason(
+    previousState: CircuitState,
+    newState: CircuitState,
+    currentState: CircuitBreakerState
+  ): 'failure_threshold' | 'success_threshold' | 'timeout' | 'manual_reset' {
+    if (previousState === 'CLOSED' && newState === 'OPEN') {
+      return 'failure_threshold';
+    } else if (previousState === 'HALF_OPEN' && newState === 'CLOSED') {
+      return 'success_threshold';
+    } else if (previousState === 'OPEN' && newState === 'HALF_OPEN') {
+      return 'timeout';
+    } else if (previousState === 'HALF_OPEN' && newState === 'OPEN') {
+      return 'failure_threshold';
+    } else if (newState === 'CLOSED' && currentState.failureCount === 0 && currentState.successCount === 0) {
+      return 'manual_reset';
+    }
+    return 'timeout'; // Default
   }
 
   /**
