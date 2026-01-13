@@ -61,7 +61,7 @@ Next ==
     \/ TimeoutOpenToHalfOpen
 
 \* Properties
-Safety == \A s \in States: (state = "OPEN") => failureCount >= FailureThreshold
+Safety == (state = "OPEN") => failureCount >= FailureThreshold
 
 \* For TLC: statesubset bound
 Spec == Init /\ [][Next]_<<state, failureCount, successCount>>

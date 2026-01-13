@@ -1,10 +1,7 @@
 name: TLA+ CircuitBreaker Model Check
 
 on:
-  push:
-    branches: [ feature/spec/circuitbreaker-tla ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch: []  # manual run only while we use local TLC via VS Code
 
 jobs:
   tlc:
