@@ -24,6 +24,12 @@ import { RepositoryConfigService } from './platform/repository-config';
 import { extractRepositoryTarget, hasRepositoryConfigs, resolveRepositoryContext } from './utils/repository';
 import { handlePhase3Analytics } from './platform/analytics/endpoints';
 
+// Monitoring services (Metrics & Analytics)
+import { MetricsCollector, AnalyticsService } from './platform/monitoring';
+import { createAlertingServiceFromEnv } from './platform/alerting/AlertingService';
+import type { Alert as PlatformAlert } from './platform/alerting/alerts';
+import { routeMonitoringRequest } from './endpoints/monitoring';
+
 // Export TestContainer for Cloudflare Containers (Phase 2)
 export { TestContainer } from './containers/TestContainer';
 
@@ -149,6 +155,32 @@ export default {
           lowQualityQueries: ragMetrics.getLowQualityQueries(0.7).length,
         },
       });
+    }
+
+    // Monitoring endpoints (Phase 4.1): /analytics, /metrics (monitoring), /health
+    if (request.method === 'GET' && (url.pathname === '/analytics' || url.pathname === '/health' || url.pathname === '/metrics')) {
+      try {
+        const kv = env.KV;
+        if (!kv) {
+          return new Response(
+            JSON.stringify({ error: 'KV namespace not configured' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const metricsCollector = new MetricsCollector(kv, createLogger(env));
+        const alertingService = createAlertingServiceFromEnv(env);
+        const analyticsService = new AnalyticsService(metricsCollector, createLogger(env), async (a: PlatformAlert) => alertingService.alert(a));
+
+        return routeMonitoringRequest(request, metricsCollector, analyticsService);
+      } catch (error: unknown) {
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+
+    // Favicon: respond with 204 No Content to avoid 405 log spam
+    if (request.method === 'GET' && url.pathname === '/favicon.ico') {
+      return new Response(null, { status: 204 });
     }
 
     // Phase 3 analytics endpoint (Phase 3.10)

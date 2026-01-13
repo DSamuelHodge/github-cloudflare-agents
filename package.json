@@ -15,7 +15,9 @@
     "setup-secrets": "npm run setup:github-token && npm run setup:gemini-key",
     "setup:github-token": "wrangler secret put GITHUB_TOKEN",
     "setup:gemini-key": "wrangler secret put GEMINI_API_KEY",
-    "setup:webhook-secret": "wrangler secret put GITHUB_WEBHOOK_SECRET"
+    "setup:webhook-secret": "wrangler secret put GITHUB_WEBHOOK_SECRET",
+    "setup:alerting-secrets": "wrangler secret put ALERT_SLACK_BOT_TOKEN && wrangler secret put ALERT_SLACK_APP_TOKEN && wrangler secret put ALERT_SLACK_WEBHOOK && wrangler secret put RESEND_API_KEY && wrangler secret put ALERT_FROM",
+    "test:staging-alert": "node ./scripts/send-staging-alert.js"
   },
   "keywords": [
     "cloudflare",
