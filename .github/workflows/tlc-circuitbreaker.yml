@@ -23,7 +23,7 @@ jobs:
           docker run --rm \
             -v "$PWD/docs/specs:/specs" \
             -v "$PWD/tlc-output:/tlc-output" \
-            tlaplus/tlatools tlc \
+            maxdiefenbach/tlaplus tlc \
               -cleanup -deadlock -workers 2 \
               -config /specs/circuit_breaker.cfg /specs/circuit_breaker.tla \
               2>&1 | tee tlc-output/tlc.log
