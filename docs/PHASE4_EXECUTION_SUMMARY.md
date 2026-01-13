@@ -42,17 +42,17 @@ Issue → Agent → Cloudflare AI Gateway → Gemini (primary)
 ## Your Next Steps (30-45 Minutes)
 
 ### Step 1: Gather Prerequisites
-- [ ] Cloudflare Account ID (from dashboard Settings)
-- [ ] API Token with "AI Gateway" permissions
-- [ ] Gemini API key (Google AI Studio)
-- [ ] OpenAI API key (platform.openai.com)
-- [ ] Anthropic API key (console.anthropic.com)
+- [x] Cloudflare Account ID (from dashboard Settings)
+- [x] API Token with "AI Gateway" permissions
+- [x] Gemini API key (Google AI Studio)
+- [x] HuggingFace API key 
+- [x] Anthropic API key (console.anthropic.com)
 
 ### Step 2: Follow Setup Guide
 - [ ] Open `docs/PHASE4_STAGE1_SETUP_GUIDE.md`
-- [ ] Choose Option A (Dashboard GUI) — recommended for first-time
-- [ ] Follow 5 setup steps (15 min)
-- [ ] Store 3 provider keys via BYOK (Cloudflare Secrets Store)
+- [x] Choose Option A (Dashboard GUI) — recommended for first-time
+- [x] Follow 5 setup steps (15 min)
+- [x] Store 3 provider keys via BYOK (Cloudflare Secrets Store)
 
 ### Step 3: Verify Everything Works
 - [ ] Run 6 curl validation tests provided in setup guide (10 min)

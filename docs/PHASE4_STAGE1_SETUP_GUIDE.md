@@ -10,8 +10,8 @@
 
 ```
 1. Go to https://dash.cloudflare.com → AI > AI Gateway
-2. Click "Create Gateway" → Name: "github-ai-agent" → Create
-3. Add Provider Keys: Gemini, OpenAI, Anthropic
+2. Click "Create Gateway" → Name: "github-cloudflare-agent-gateway" → Create
+3. Add Provider Keys: Gemini, HugginFace, Anthropic
 4. Copy Gateway ID and Account ID
 5. Update .dev.vars with new variables
 6. Test endpoints (curl commands below)
@@ -26,7 +26,7 @@
 - ✅ Cloudflare API token with AI Gateway permissions
 - ✅ 3 provider API keys:
   - Google AI Studio (Gemini): https://aistudio.google.com/app/apikey
-  - OpenAI: https://platform.openai.com/api-keys
+  - HugginFace: https://platform.HugginFace.com/api-keys
   - Anthropic: https://console.anthropic.com/account/keys
 
 ---
@@ -38,13 +38,13 @@
 1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com)
 2. Navigate to: **AI > AI Gateway**
 3. Click **Create Gateway**
-4. Enter Gateway Name: `github-ai-agent`
+4. Enter Gateway Name: `github-cloudflare-agent-gateway`
 5. Click **Create**
 
 **Result:**
-- Gateway ID created (e.g., `github-ai-agent`)
+- Gateway ID created (e.g., `github-cloudflare-agent-gateway`)
 - Status: Active
-- Note the Account ID from dashboard URL: `https://dash.cloudflare.com/?to=/:account_id/ai/ai-gateway`
+- Note the Account ID from dashboard URL: `https://https://dash.cloudflare.com/6c2dbbe47de58a74542ad9a5d9dd5b2b/ai/ai-gateway/gateways/github-cloudflare-agent-gateway`
 
 ---
 
@@ -56,17 +56,17 @@
 2. Click **Add API Key**
 3. Select provider from dropdown:
    - Google AI Studio
-   - OpenAI
+   - HugginFace
    - Anthropic
 4. Paste API key in field
-5. (Optional) Add description: e.g., "Gemini for github-ai-agent"
+5. (Optional) Add description: e.g., "Gemini for github-cloudflare-agent-gateway"
 6. Click **Save**
 
 **Repeat for all 3 providers.**
 
 **Result:**
 - Gemini key stored (encrypted)
-- OpenAI key stored (encrypted)
+- HugginFace key stored (encrypted)
 - Anthropic key stored (encrypted)
 
 ---
@@ -109,7 +109,7 @@ curl -X POST https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/ai-gatewa
   -H "Authorization: Bearer $CF_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "github-ai-agent"
+    "name": "github-cloudflare-agent-gateway"
   }'
 ```
 
@@ -119,7 +119,7 @@ curl -X POST https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/ai-gatewa
   "success": true,
   "result": {
     "id": "gateway-id-123",
-    "name": "github-ai-agent",
+    "name": "github-cloudflare-agent-gateway",
     "account_id": "$ACCOUNT_ID",
     "created_at": "2026-01-12T19:00:00Z"
   }
@@ -147,7 +147,7 @@ curl -X POST https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/ai-gatewa
     "provider": "google-ai-studio"
   }'
 
-# Repeat for OpenAI and Anthropic
+# Repeat for HugginFace and Anthropic
 ```
 
 ---
@@ -166,7 +166,7 @@ LOG_LEVEL="info"
 
 # New Phase 4.1 variables (add these)
 CLOUDFLARE_ACCOUNT_ID="your-account-id"
-CLOUDFLARE_GATEWAY_ID="github-ai-agent"
+CLOUDFLARE_GATEWAY_ID="github-cloudflare-agent-gateway"
 CLOUDFLARE_API_TOKEN="your-bearer-token"
 ```
 
@@ -179,7 +179,7 @@ Add to `.dev.vars.example` (for documentation):
 # Phase 4.1: Cloudflare AI Gateway Configuration
 # ─────────────────────────────────────────────────
 CLOUDFLARE_ACCOUNT_ID=your-account-id-from-dashboard
-CLOUDFLARE_GATEWAY_ID=github-ai-agent
+CLOUDFLARE_GATEWAY_ID=github-cloudflare-agent-gateway
 CLOUDFLARE_API_TOKEN=your-bearer-token-with-ai-gateway-permissions
 ```
 
@@ -195,15 +195,15 @@ curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai-gatewa
   -H "Content-Type: application/json"
 ```
 
-**Expected:** Array with `github-ai-agent` listed
+**Expected:** Array with `github-cloudflare-agent-gateway` listed
 
 ---
 
 ### ✅ Step 2: Provider Keys Stored
 
 Dashboard check:
-- Navigate to AI > AI Gateway > github-ai-agent > Provider Keys
-- Verify: 3 keys listed (Gemini, OpenAI, Anthropic)
+- Navigate to AI > AI Gateway > github-cloudflare-agent-gateway > Provider Keys
+- Verify: 3 keys listed (Gemini, HugginFace, Anthropic)
 - All showing "Active" status
 
 ---
@@ -240,14 +240,14 @@ curl -X POST https://gateway.ai.cloudflare.com/v1/{ACCOUNT_ID}/{GATEWAY_ID}/comp
 
 ---
 
-### ✅ Step 4: OpenAI Endpoint Responds
+### ✅ Step 4: HugginFace Endpoint Responds
 
 ```bash
 curl -X POST https://gateway.ai.cloudflare.com/v1/{ACCOUNT_ID}/{GATEWAY_ID}/compat/chat/completions \
   -H "cf-aig-authorization: Bearer {CF_API_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-4",
+    "model": "HugginFace/gpt-4",
     "messages": [
       {"role": "user", "content": "Say hello"}
     ]
@@ -285,7 +285,7 @@ curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai-gatewa
 ```
 
 **Expected:** Array of log entries with:
-- `model`: "google/gemini-2.5-flash", "openai/gpt-4", etc.
+- `model`: "google/gemini-2.5-flash", "HugginFace/gpt-4", etc.
 - `request_tokens`: number
 - `response_tokens`: number
 - `total_tokens`: number
@@ -314,7 +314,7 @@ echo ""
 # Test 1: List gateways
 echo "1. Checking gateway exists..."
 GATEWAY_CHECK=$(curl -s -X GET https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/ai-gateway/gateways \
-  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | grep -c "github-ai-agent")
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | grep -c "github-cloudflare-agent-gateway")
 
 if [ "$GATEWAY_CHECK" -gt 0 ]; then
   echo -e "${GREEN}✓ Gateway found${NC}"
@@ -336,17 +336,17 @@ else
   echo -e "${RED}✗ Gemini endpoint failed${NC}"
 fi
 
-# Test 3: OpenAI endpoint
-echo "3. Testing OpenAI endpoint..."
-OPENAI_RESPONSE=$(curl -s -X POST https://gateway.ai.cloudflare.com/v1/$CLOUDFLARE_ACCOUNT_ID/$CLOUDFLARE_GATEWAY_ID/compat/chat/completions \
+# Test 3: HugginFace endpoint
+echo "3. Testing HugginFace endpoint..."
+HugginFace_RESPONSE=$(curl -s -X POST https://gateway.ai.cloudflare.com/v1/$CLOUDFLARE_ACCOUNT_ID/$CLOUDFLARE_GATEWAY_ID/compat/chat/completions \
   -H "cf-aig-authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"model": "openai/gpt-4", "messages": [{"role": "user", "content": "hello"}]}' | grep -c "assistant")
+  -d '{"model": "HugginFace/gpt-4", "messages": [{"role": "user", "content": "hello"}]}' | grep -c "assistant")
 
-if [ "$OPENAI_RESPONSE" -gt 0 ]; then
-  echo -e "${GREEN}✓ OpenAI endpoint working${NC}"
+if [ "$HugginFace_RESPONSE" -gt 0 ]; then
+  echo -e "${GREEN}✓ HugginFace endpoint working${NC}"
 else
-  echo -e "${RED}✗ OpenAI endpoint failed${NC}"
+  echo -e "${RED}✗ HugginFace endpoint failed${NC}"
 fi
 
 # Test 4: Anthropic endpoint
