@@ -23,6 +23,7 @@
   "keywords": [
   ],
   "vitest": {
+    "include": ["tests/**/*.spec.ts", "tests/**/*.test.ts"],
     "exclude": ["tests/dist/**"]
   },
   "keywords": [
