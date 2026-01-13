@@ -7,14 +7,13 @@
 
 import { Logger } from '../../utils/logger';
 import { AgentError } from '../../utils/errors';
+import type { AIProvider } from './gateway-client';
 import type {
   CircuitState,
   CircuitBreakerState,
   CircuitBreakerConfig,
   CircuitBreakerMetrics,
-  DEFAULT_CIRCUIT_BREAKER_CONFIG,
 } from '../../types/circuit-breaker';
-import type { AIProvider } from '../../types/env';
 
 /**
  * Circuit breaker for AI provider requests
@@ -58,12 +57,12 @@ export class CircuitBreaker {
 
       if (timeSinceTransition >= this.config.openTimeout) {
         await this.transition('HALF_OPEN');
-        this.logger.info('Circuit breaker transitioning from OPEN to HALF_OPEN', undefined, {
+        this.logger.info('Circuit breaker transitioning from OPEN to HALF_OPEN', {
           provider: this.provider,
           timeSinceTransition,
         });
       } else {
-        this.logger.warn('Circuit breaker is OPEN, rejecting request', undefined, {
+        this.logger.warn('Circuit breaker is OPEN, rejecting request', {
           provider: this.provider,
           timeRemaining: this.config.openTimeout - timeSinceTransition,
         });
@@ -168,7 +167,7 @@ export class CircuitBreaker {
     // Store in KV
     await this.kv.put(this.kvKey, JSON.stringify(initialState));
 
-    this.logger.info('Circuit breaker reset', undefined, {
+    this.logger.info('Circuit breaker reset', {
       provider: this.provider,
     });
   }
@@ -178,7 +177,6 @@ export class CircuitBreaker {
    */
   private async recordSuccess(): Promise<void> {
     const state = await this.getState();
-    const now = Date.now();
 
     if (state.state === 'HALF_OPEN') {
       // In HALF_OPEN, count successes
@@ -187,7 +185,7 @@ export class CircuitBreaker {
       if (newSuccessCount >= this.config.successThreshold) {
         // Transition to CLOSED
         await this.transition('CLOSED');
-        this.logger.info('Circuit breaker closed after successful recovery', undefined, {
+        this.logger.info('Circuit breaker closed after successful recovery', {
           provider: this.provider,
           successCount: newSuccessCount,
         });
@@ -237,7 +235,7 @@ export class CircuitBreaker {
       if (newFailureCount >= this.config.failureThreshold) {
         // Transition to OPEN
         await this.transition('OPEN');
-        this.logger.warn('Circuit breaker opened due to failures', undefined, {
+        this.logger.warn('Circuit breaker opened due to failures', {
           provider: this.provider,
           failureCount: newFailureCount,
           threshold: this.config.failureThreshold,
@@ -268,7 +266,7 @@ export class CircuitBreaker {
 
     await this.saveState(state);
 
-    this.logger.info('Circuit breaker state transition', undefined, {
+    this.logger.info('Circuit breaker state transition', {
       provider: this.provider,
       newState,
     });

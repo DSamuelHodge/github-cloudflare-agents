@@ -4,7 +4,7 @@
  * Types for implementing circuit breaker pattern with KV-backed state persistence.
  */
 
-import type { AIProvider } from './env';
+import type { AIProvider } from '../platform/ai/gateway-client';
 
 /**
  * Circuit breaker states following standard pattern

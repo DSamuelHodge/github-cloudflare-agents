@@ -7,10 +7,10 @@
 
 import { Logger } from '../../utils/logger';
 import { AgentError } from '../../utils/errors';
-import { GatewayAIClient } from './gateway-client';
-import { CircuitBreaker, createCircuitBreaker } from './circuit-breaker';
+import { GatewayAIClient, type AIProvider } from './gateway-client';
+import { CircuitBreaker } from './circuit-breaker';
 import type { OpenAIChatCompletionRequest, OpenAIChatCompletionResponse } from '../../types/openai';
-import type { AIProvider, Env } from '../../types/env';
+import type { Env } from '../../types/env';
 import type { CircuitBreakerConfig } from '../../types/circuit-breaker';
 
 /**
@@ -88,7 +88,7 @@ export class FallbackAIClient {
       this.gatewayClients.set(provider, gatewayClient);
     }
 
-    this.logger.info('FallbackAIClient initialized', undefined, {
+    this.logger.info('FallbackAIClient initialized', {
       providers: this.providers,
       providerCount: this.providers.length,
     });
@@ -114,7 +114,7 @@ export class FallbackAIClient {
       try {
         attemptedProviders.push(provider);
         
-        this.logger.info('Attempting provider', undefined, {
+        this.logger.info('Attempting provider', {
           provider,
           attemptNumber: attemptedProviders.length,
           totalProviders: this.providers.length,
@@ -122,7 +122,7 @@ export class FallbackAIClient {
 
         const response = await this.tryProvider(provider, request);
         
-        this.logger.info('Provider succeeded', undefined, {
+        this.logger.info('Provider succeeded', {
           provider,
           attemptedProviders,
           totalAttempts: attemptedProviders.length,
@@ -133,11 +133,11 @@ export class FallbackAIClient {
         const err = error instanceof Error ? error : new Error('Unknown error');
         errors.push({ provider, error: err });
 
-        this.logger.warn('Provider failed, trying next', err, {
+        this.logger.warn('Provider failed, trying next', {
           provider,
-          attemptedProviders,
-          remainingProviders: this.providers.length - attemptedProviders.length,
-          errorMessage: err.message,
+          code: err instanceof AgentError ? err.code : 'UNKNOWN',
+          statusCode: err instanceof AgentError ? err.statusCode : 500,
+          name: err.name,
         });
 
         // Continue to next provider
@@ -176,7 +176,7 @@ export class FallbackAIClient {
   async resetAllCircuitBreakers(): Promise<void> {
     for (const [provider, circuitBreaker] of this.circuitBreakers.entries()) {
       await circuitBreaker.reset();
-      this.logger.info('Circuit breaker reset', undefined, { provider });
+      this.logger.info('Circuit breaker reset', { provider });
     }
   }
 

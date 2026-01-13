@@ -15,8 +15,7 @@ import { Logger } from '../../utils/logger';
 import { AgentError } from '../../utils/errors';
 import type { 
   OpenAIChatCompletionRequest, 
-  OpenAIChatCompletionResponse,
-  OpenAIMessage 
+  OpenAIChatCompletionResponse
 } from '../../types/openai';
 
 /**
@@ -43,70 +42,6 @@ interface ProviderEndpoint {
   headers: Record<string, string>;
   transformRequest: (req: OpenAIChatCompletionRequest) => unknown;
   transformResponse: (res: unknown) => OpenAIChatCompletionResponse;
-}
-
-/**
- * Gemini API request format
- */
-interface GeminiRequest {
-  contents: Array<{
-    role: string;
-    parts: Array<{ text: string }>;
-  }>;
-  generationConfig?: {
-    temperature?: number;
-    maxOutputTokens?: number;
-  };
-}
-
-/**
- * Gemini API response format
- */
-interface GeminiResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{ text: string }>;
-      role: string;
-    };
-    finishReason?: string;
-  }>;
-  usageMetadata?: {
-    promptTokenCount: number;
-    candidatesTokenCount: number;
-    totalTokenCount: number;
-  };
-}
-
-/**
- * Anthropic API request format
- */
-interface AnthropicRequest {
-  model: string;
-  messages: Array<{
-    role: string;
-    content: string;
-  }>;
-  max_tokens: number;
-  temperature?: number;
-}
-
-/**
- * Anthropic API response format
- */
-interface AnthropicResponse {
-  id: string;
-  type: string;
-  role: string;
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  model: string;
-  stop_reason: string | null;
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-  };
 }
 
 /**
