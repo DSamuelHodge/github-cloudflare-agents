@@ -51,6 +51,9 @@ export interface Env {
   CLOUDFLARE_API_TOKEN?: string;
   AI_PROVIDER?: 'gemini' | 'huggingface' | 'anthropic';
   AI_MODEL?: string;
+
+  // Phase 5: Feature gating for advanced agents
+  PHASE5_ENABLE?: string; // boolean-like string 'true' or 'false' (default: 'false')
   
   // Phase 4.1 Stage 3: Fallback Strategy
   AI_FALLBACK_PROVIDERS?: string; // Comma-separated provider chain (e.g., "gemini,huggingface,anthropic")

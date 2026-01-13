@@ -324,7 +324,7 @@ Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses wit
   - [x] Secrets migrated to Wrangler (no sensitive data in `.dev.vars`)
 
 ### Phase 5: Advanced Agent Capabilities
-- [ ] **Code Generation Agent**: Generate entire features from natural language specifications
+- [ ] **Code Generation Agent**: Generate entire features from natural language specifications,leverages Cloudflare Container.
 - [ ] **Security Scan Agent**: Automated security vulnerability scanning for dependencies and code patterns
 - [ ] **Performance Profiling Agent**: Analyze PR performance impact and suggest optimizations
 - [ ] **Documentation Generator Agent**: Auto-generate or update documentation based on code changes

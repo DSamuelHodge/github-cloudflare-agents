@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -35,6 +34,9 @@ npm-debug.log*
 # Testing
 coverage/
 .nyc_output/
+
+# Compiled test artifacts (should not be committed)
+tests/dist/
 
 # Secrets (never commit these!)
 *.pem

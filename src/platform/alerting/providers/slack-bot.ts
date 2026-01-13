@@ -37,7 +37,8 @@ export class SlackBotProvider implements AlertProvider {
 
     const data: unknown = await res.json().catch(() => ({}));
 
-    if (!res.ok || (typeof data === 'object' && data !== null && 'ok' in data && (data as any).ok === false)) {
+    const okFlag = (typeof data === 'object' && data !== null && 'ok' in data) ? (data as { ok?: unknown }).ok : undefined;
+    if (!res.ok || okFlag === false) {
       this.logger.error('Slack API returned an error', undefined, { status: res.status, body: data });
       throw new Error(`Slack API failed: ${res.status} ${res.statusText}`);
     }
