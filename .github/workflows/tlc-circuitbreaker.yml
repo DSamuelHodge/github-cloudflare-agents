@@ -1,0 +1,51 @@
+name: TLA+ CircuitBreaker Model Check
+
+on:
+  push:
+    branches: [ feature/spec/circuitbreaker-tla ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tlc:
+    name: Run TLC (CircuitBreaker)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Download tla2tools.jar
+        run: |
+          TLA_VERSION=v1.8.1
+          curl -L -o tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/${TLA_VERSION}/tla2tools.jar
+
+      - name: Run TLC (model check)
+        run: |
+          set -e
+          mkdir -p tlc-output
+          # Run TLC and capture output
+          java -cp tla2tools.jar tlc2.TLC -cleanup -deadlock -workers 2 -config docs/specs/circuit_breaker.cfg docs/specs/circuit_breaker.tla 2>&1 | tee tlc-output/tlc.log
+          TLC_EXIT=${PIPESTATUS[0]:-${PIPESTATUS}}
+          echo "$TLC_EXIT" > tlc-output/exitcode.txt
+          if [ "$TLC_EXIT" -ne 0 ]; then
+            echo "TLC finished with non-zero exit code: $TLC_EXIT"
+            exit 1
+          fi
+
+      - name: Upload TLC logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: tlc-results
+          path: tlc-output
+
+      - name: Print summary
+        if: success()
+        run: |
+          echo "TLC completed successfully. Artifacts: tlc-results"
