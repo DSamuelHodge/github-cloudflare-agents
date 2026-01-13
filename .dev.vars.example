@@ -4,3 +4,16 @@ GEMINI_API_KEY=replace-with-gemini-key
 GEMINI_MODEL=gemini-3.0-flash
 GITHUB_WEBHOOK_SECRET=replace-with-webhook-secret
 # TARGET_REPO=owner/repo
+
+# ─────────────────────────────────────────────────────────────
+# Phase 4.1: Cloudflare AI Gateway (Multi-Provider Support)
+# ─────────────────────────────────────────────────────────────
+# Instructions: See docs/PHASE4_STAGE1_SETUP_GUIDE.md
+#
+# Get Account ID: https://dash.cloudflare.com → Account Home → Copy Account ID
+# Get API Token: https://dash.cloudflare.com → User → API Tokens → Create Token
+# Required Permissions: AI Gateway - Read, AI Gateway - Edit
+#
+CLOUDFLARE_ACCOUNT_ID=your-account-id-here
+CLOUDFLARE_GATEWAY_ID=github-ai-agent
+CLOUDFLARE_API_TOKEN=your-bearer-token-here
