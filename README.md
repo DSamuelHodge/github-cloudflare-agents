@@ -1,57 +1,86 @@
-# GitHub AI Agent
+# GitHub AI Agent (Multi-Agent Platform)
 
-A lightweight Cloudflare Worker that listens to GitHub issue webhooks and posts AI-generated responses as comments.
+A production-ready multi-agent platform implemented as a Cloudflare Worker. The project listens to GitHub webhooks (issues and PRs), applies agent pipelines to triage and respond, and can create automated PRs and comments based on AI-generated suggestions.
 
-This repository contains a modular agent platform with adapters for multiple AI providers, a fallback client with circuit breakers, observability endpoints, and test coverage for core behavior.
+Key capabilities
 
-## Requirements
+- Multi-Agent Architecture
+  - Agent registry and middleware pipeline for modular agents (issue responder, PR reviewer, triage agents, etc.)
+  - Agents are easy to add and test via `src/agents/*`
 
-- Node.js 18+ (for local tooling and tests)
-- Cloudflare Wrangler CLI (for deployment)
+- Multi-Provider AI Gateway
+  - Integrations for Gemini (Google), HuggingFace (Mixtral), and Anthropic (Claude)
+  - OpenAI-compatible API surface via `GatewayAIClient`
+  - Provider-specific request/response transforms
 
-## Quickstart (local)
+- Resilience & Failover
+  - `FallbackAIClient` orchestrates provider failover
+  - Circuit breaker implementation with KV-backed persistence and in-memory caching
+  - Configurable thresholds and recovery policies
 
-1. Clone the repository:
+- Observability & Analytics
+  - `MetricsCollector` records request-level telemetry (latency, tokens, success/failure)
+  - `AnalyticsService` provides time-series analytics and anomaly detection
+  - Monitoring endpoints: `/metrics`, `/analytics`, `/health`
+  - Dashboard data service for visualization-ready datasets
+
+- Storage & Archival
+  - Short-term metrics in KV with efficient caching
+  - Long-term archival to R2 with date-based keys and aggregation queries
+
+- Testing & Safe Automation
+  - Container-based worktree test execution for isolated runs
+  - Parallel multi-solution testing and automated PR workflow
+  - Comprehensive unit tests and load tests (CI-friendly)
+
+- Alerting
+  - Slack and Email (Resend) alerting integrations for production monitoring and runbooks
+
+Quickstart (local)
+
+1. Clone the repository and install dependencies:
+
    git clone <repo-url>
    cd github-cloudflare-agent
-
-2. Install dependencies:
    npm install
 
-3. Create a local environment file from the example and fill in required values:
-   cp .dev.vars.example .dev.vars
-   # set GITHUB_WEBHOOK_SECRET, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_API_TOKEN, etc.
+2. Create a local `.dev.vars` from `.dev.vars.example` and add required secrets (GITHUB_WEBHOOK_SECRET, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_API_TOKEN, etc.).
 
-4. Run locally:
+3. Run locally with Wrangler for development:
+
    npm run dev
 
-5. Run tests:
+4. Run the test suite:
+
    npm test
 
-6. Type-check and lint before committing:
+5. Type-check and lint:
+
    npm run type-check
    npm run lint
 
-## Deploy
+Deploy
 
-- Configure `wrangler.toml` with your Cloudflare account and bindings.
-- Deploy to Cloudflare Workers using:
+- Configure `wrangler.toml` with your Cloudflare account, KV and R2 bindings, and required secrets.
+- Deploy to Cloudflare Workers:
+
   npm run deploy
 
-## Contributing
+Project status & documentation
 
-- Open an issue to discuss larger changes.
-- Create a feature branch: `git checkout -b feat/short-description`.
-- Make changes, add tests, and ensure `npm test` and `npm run lint` pass.
-- Submit a pull request against `main` with a clear description of the change and reasoning.
+- Production deployment (if configured): `https://github-ai-agent.dschodge2020.workers.dev` (see `docs/DEPLOYMENT_READY.md` and `docs/DEPLOYMENT_COMPLETE.md`).
+- Detailed architecture and design: `docs/ARCHITECTURE.md`.
+- Release notes and changelog preserved in `.CHANGELOG`.
 
-Commit message guidelines: use conventional commits style (e.g., `fix:`, `feat:`, `chore:`, `docs:`).
+Contributing
 
-## Contact
+- Open an issue to discuss design or feature requests.
+- Branch from `main`: `git checkout -b feat/short-description`.
+- Add tests for new behaviors and ensure `npm test` and `npm run lint` pass.
+- Use conventional commits for commit messages (e.g., `fix:`, `feat:`, `chore:`, `docs:`).
+- Submit a PR with a clear description and link to related issues.
 
-For questions or to request features, open an issue in this repository.
-
-## License
+License
 
 MIT
 
