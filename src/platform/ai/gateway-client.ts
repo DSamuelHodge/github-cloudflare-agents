@@ -189,36 +189,42 @@ export class GatewayAIClient {
         };
       },
       transformResponse: (res: unknown): OpenAIChatCompletionResponse => {
-        const data = res as any;
+        const data = res as unknown;
 
         // Accept both OpenAI-shaped responses and Gemini native responses
-        if (data && Array.isArray(data.choices) && data.choices.length > 0) {
+        if (data && typeof data === 'object' && Array.isArray((data as { choices?: unknown }).choices) && ((data as { choices?: unknown }).choices as unknown[]).length > 0) {
           return data as OpenAIChatCompletionResponse;
         }
 
-        if (!data || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+        if (!data || typeof data !== 'object') {
           throw new AgentError('Invalid Gemini response', 'INVALID_RESPONSE');
         }
 
-        const choices = data.candidates.map((c: any, i: number) => {
-          const parts = c?.content?.parts || [];
-          const text = parts.map((p: any) => p.text || '').join('');
-          const finish = c?.finishReason ? (String(c.finishReason).toLowerCase() === 'stop' ? 'stop' : c.finishReason) : undefined;
+        const candidates = Array.isArray((data as { candidates?: unknown }).candidates) ? (data as { candidates?: unknown }).candidates as unknown[] : [];
+        if (candidates.length === 0) {
+          throw new AgentError('Invalid Gemini response', 'INVALID_RESPONSE');
+        }
+
+        const choices = candidates.map((c: unknown, i: number) => {
+          const content = (c as { content?: unknown }).content as { parts?: unknown[] } | undefined;
+          const parts = Array.isArray(content?.parts) ? content!.parts : [];
+          const text = parts.map(p => (p && typeof p === 'object' && 'text' in (p as object)) ? String((p as { text?: unknown }).text ?? '') : '').join('');
+          const finish = (c as { finishReason?: unknown }).finishReason ? (String((c as { finishReason?: unknown }).finishReason).toLowerCase() === 'stop' ? 'stop' : (c as { finishReason?: unknown }).finishReason) : undefined;
 
           return {
             index: i,
             message: { role: 'assistant', content: text },
-            finish_reason: finish,
+            finish_reason: finish as unknown,
           };
         });
 
-        const usage = { total_tokens: data?.usageMetadata?.totalTokenCount ?? undefined };
+        const usage = { total_tokens: (data as { usageMetadata?: { totalTokenCount?: number } }).usageMetadata?.totalTokenCount ?? undefined };
 
         return {
-          id: data.id ?? '',
+          id: (data as { id?: unknown }).id ? String((data as { id?: unknown }).id) : '',
           object: 'chat.completion',
           created: Date.now(),
-          model: this.config.model || (data.model ?? 'gemini-2.0-flash-exp'),
+          model: this.config.model || ((data as { model?: unknown }).model ? String((data as { model?: unknown }).model) : 'gemini-2.0-flash-exp'),
           choices,
           usage,
         } as OpenAIChatCompletionResponse;
@@ -251,7 +257,7 @@ export class GatewayAIClient {
     return {
       path: '/anthropic/v1/messages',
       headers: { 'anthropic-version': '2023-06-01' },
-      transformRequest: (req: OpenAIChatCompletionRequest): any => {
+      transformRequest: (req: OpenAIChatCompletionRequest): unknown => {
         // Convert OpenAI-style request to Anthropic message format and default max_tokens
         const maxTokens = req.max_tokens ?? 1024;
         return {
@@ -261,30 +267,36 @@ export class GatewayAIClient {
         };
       },
       transformResponse: (res: unknown): OpenAIChatCompletionResponse => {
-        const data = res as any;
+        const data = res as unknown;
 
         // If the gateway already returned OpenAI-shaped response, use it directly
-        if (data && Array.isArray(data.choices)) {
-          if (data.choices.length === 0) {
+        if (data && typeof data === 'object' && Array.isArray((data as { choices?: unknown }).choices)) {
+          const choices = (data as { choices?: unknown }).choices as unknown[];
+          if (choices.length === 0) {
             throw new AgentError('Invalid Anthropic response', 'INVALID_RESPONSE');
           }
           return data as OpenAIChatCompletionResponse;
         }
 
+        if (!data || typeof data !== 'object') {
+          throw new AgentError('Invalid Anthropic response', 'INVALID_RESPONSE');
+        }
+
         // Map Anthropic-shaped response to OpenAI shape
-        const contentArray = Array.isArray(data.content) ? data.content : [{ text: data?.content?.text ?? '' }];
-        const text = contentArray.map((c: any) => c.text || '').join('');
-        const usageTotal = (data?.usage?.input_tokens ?? 0) + (data?.usage?.output_tokens ?? 0);
+        const contentCandidate = (data as { content?: unknown }).content;
+        const contentArray = Array.isArray(contentCandidate) ? contentCandidate as unknown[] : [{ text: (contentCandidate as { text?: unknown })?.text ?? '' }];
+        const text = contentArray.map(c => (c && typeof c === 'object' && 'text' in (c as object)) ? String((c as { text?: unknown }).text ?? '') : '').join('');
+        const usageTotal = ((data as { usage?: { input_tokens?: unknown, output_tokens?: unknown } }).usage?.input_tokens as number | undefined ?? 0) + ((data as { usage?: { input_tokens?: unknown, output_tokens?: unknown } }).usage?.output_tokens as number | undefined ?? 0);
 
         return {
-          id: data.id ?? '',
+          id: (data as { id?: unknown }).id ? String((data as { id?: unknown }).id) : '',
           object: 'chat.completion',
           created: Date.now(),
-          model: data.model ?? this.config.model,
+          model: (data as { model?: unknown }).model ? String((data as { model?: unknown }).model) : this.config.model,
           choices: [{
             index: 0,
             message: { role: 'assistant', content: text },
-            finish_reason: data.stop_reason ?? undefined,
+            finish_reason: (data as { stop_reason?: unknown }).stop_reason ?? undefined,
           }],
           usage: { total_tokens: usageTotal },
         } as OpenAIChatCompletionResponse;

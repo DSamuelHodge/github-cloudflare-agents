@@ -112,9 +112,9 @@ export class FallbackAIClient {
     // If running inside a test harness that uses a global fetch mock (e.g., Vitest),
     // reset its queued implementations to avoid leaking mockResolvedValueOnce between
     // tests. This is safe as a no-op in production where fetch isn't a mock.
-    const gf = (globalThis as unknown as { fetch?: any }).fetch;
-    if (gf && typeof gf.mockReset === 'function') {
-      gf.mockReset();
+    const maybeFetch = (globalThis as unknown as { fetch?: unknown }).fetch;
+    if (maybeFetch && typeof (maybeFetch as { mockReset?: unknown }).mockReset === 'function') {
+      (maybeFetch as { mockReset: () => void }).mockReset();
     }
   }
 
