@@ -168,7 +168,9 @@ export default {
           );
         }
 
-        const metricsCollector = new MetricsCollector(kv, createLogger(env));
+        // Ensure KV type aligns with MetricsCollector expectations
+        const kvNamespace = env.KV as unknown as import('@cloudflare/workers-types').KVNamespace;
+        const metricsCollector = new MetricsCollector(kvNamespace, createLogger(env));
         const alertingService = createAlertingServiceFromEnv(env);
         const analyticsService = new AnalyticsService(metricsCollector, createLogger(env), async (a: PlatformAlert) => alertingService.alert(a));
 

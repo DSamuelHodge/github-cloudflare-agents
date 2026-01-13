@@ -288,10 +288,11 @@ export class AnalyticsService implements IAnalyticsService {
 
       // Trigger alerts via optional alert handler (non-blocking)
       if (this.alertHandler && anomalies.length > 0) {
+        const handler = this.alertHandler;
         for (const a of anomalies) {
           (async () => {
             try {
-              await this.alertHandler({
+              await handler({
                 title: `Monitoring: ${a.type}`,
                 message: a.description,
                 severity: a.severity === 'critical' ? 'critical' : 'warning',

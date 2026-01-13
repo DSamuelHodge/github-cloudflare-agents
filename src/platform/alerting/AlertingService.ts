@@ -60,13 +60,13 @@ export class AlertingService {
     setTimeout(() => this.dedupeMap.delete(key), this.dedupeWindowMs);
 
     const metrics = createMetrics({ component: 'alerting' });
-    metrics.recordRequest?.();
+    metrics.increment('alert.requests', 1);
 
     try {
       await Promise.all(this.providers.map(p => this.sendWithRetry(p, alert, 2)));
-      metrics.recordSuccess?.();
+      metrics.increment('alert.success', 1);
     } catch (error) {
-      metrics.recordFailure?.();
+      metrics.increment('alert.failure', 1);
       this.logger.error('Failed to send alert', error instanceof Error ? error : undefined, { alert: alert.title });
       // Do not rethrow: alert failures should not crash callers
     }

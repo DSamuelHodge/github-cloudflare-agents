@@ -1,5 +1,7 @@
 # GitHub AI Agent (Cloudflare Worker)
 
+> README last updated: 2026-01-13 — minor documentation update and test fixes.
+
 Cloudflare Worker that listens to GitHub issue webhooks, drafts AI responses with Gemini 3 Flash (OpenAI-compatible API), and posts comments back to GitHub issues.
 
 ## Features
