@@ -36,6 +36,9 @@ npm-debug.log*
 coverage/
 .nyc_output/
 
+# Compiled test artifacts (should not be committed)
+tests/dist/
+
 # Secrets (never commit these!)
 *.pem
 *.key
