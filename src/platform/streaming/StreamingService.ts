@@ -147,7 +147,12 @@ export class StreamingService {
       });
     }
 
-    const jobStream = this.jobStreams.get(jobId)!;
+    const jobStream = this.jobStreams.get(jobId);
+    if (!jobStream) {
+      // Invariant violated: jobStream should exist after set above
+      throw new Error(`Missing job stream for ${jobId}`);
+    }
+
     jobStream.subscribers.add(connectionId);
 
     this.logger.info('Connection subscribed to job', { connectionId, jobId });

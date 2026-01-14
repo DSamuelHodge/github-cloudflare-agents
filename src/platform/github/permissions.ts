@@ -83,7 +83,9 @@ export class PermissionService {
     const cacheKey = `${owner}/${repo}`;
     
     if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
+      const cached = this.cache.get(cacheKey);
+      if (cached !== undefined) return cached;
+      // fallthrough to fetch if unexpected cache miss
     }
 
     try {

@@ -1,0 +1,10 @@
+path,line,category,riskScore,priority,notes
+src/platform/documentation/indexer.ts,205,env-binding,5,high,"KVNamespace binding; validate env and fail-fast"
+src/platform/streaming/StreamingService.ts,150,map-get-postfix,2,medium,"map.get after set/has — narrow local variable"
+src/containers/server.ts,268,map-get-postfix,2,medium,"sseConnections.get after set — narrow local var"
+src/platform/ai/gateway-client.ts,210,deserialization-guard,2,medium,"use local narrow variable for content.parts"
+src/endpoints/monitoring.ts,74,post-parse-assertion,2,medium,"narrow hours into local const after validation"
+src/platform/monitoring/DashboardService.ts,227,conditional-filter-assertion,2,medium,"ensure point.providerBreakdown type narrower when mapping"
+src/platform/github/permissions.ts,86,cache-get-after-has,1,low,"cache.has then cache.get — refine types"
+src/platform/documentation/keyword-search.ts,116,cache-get-after-has,1,low,"cache.has then cache.get — refine types"
+src/platform/parallel/ResultAggregator.ts,121,post-check-assertion,1,low,"function guard exists; consider narrowing to avoid assertion"

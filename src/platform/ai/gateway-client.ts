@@ -207,7 +207,7 @@ export class GatewayAIClient {
 
         const choices = candidates.map((c: unknown, i: number) => {
           const content = (c as { content?: unknown }).content as { parts?: unknown[] } | undefined;
-          const parts = Array.isArray(content?.parts) ? content!.parts : [];
+          const parts = Array.isArray(content?.parts) ? (content as { parts: unknown[] }).parts : [];
           const text = parts.map(p => (p && typeof p === 'object' && 'text' in (p as object)) ? String((p as { text?: unknown }).text ?? '') : '').join('');
           const finish = (c as { finishReason?: unknown }).finishReason ? (String((c as { finishReason?: unknown }).finishReason).toLowerCase() === 'stop' ? 'stop' : (c as { finishReason?: unknown }).finishReason) : undefined;
 

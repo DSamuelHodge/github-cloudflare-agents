@@ -9,6 +9,7 @@ import { EmbeddingService, storeEmbedding } from './embeddings';
 import type { DocumentChunk, IndexingJob } from '../../types/documentation';
 import type { ChunkingConfig } from '../../types/rag-config';
 import { Logger } from '../../utils/logger';
+import { assertExists } from '../../utils/guards';
 
 export interface IndexingOptions {
   owner: string;
@@ -200,9 +201,12 @@ export class DocumentationIndexer {
     
     const embeddings = await this.embeddingService.generateEmbeddings(items);
     
-    // Store embeddings in KV
+    // Validate KV namespace binding and store embeddings
+    const kv = this.kvNamespace;
+    assertExists(kv, 'KV namespace not bound: kvNamespace');
+
     await Promise.all(
-      embeddings.map(embedding => storeEmbedding(this.kvNamespace!, embedding))
+      embeddings.map(embedding => storeEmbedding(kv, embedding))
     );
     
     this.logger.info('Embeddings stored', { count: embeddings.length });
