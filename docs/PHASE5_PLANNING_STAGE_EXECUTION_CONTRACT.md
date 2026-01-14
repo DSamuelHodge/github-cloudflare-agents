@@ -28,19 +28,19 @@ Phase 5 Planning: Advanced Agent Capabilities Foundation
 - [ ] `docs/PHASE5_STAGE_EXECUTION_CONTRACT.md` - Updated with implementation stages
 
 ### Code Infrastructure
-- [ ] `src/platform/sandbox/` - Sandbox runtime implementation
-  - [ ] `runtime.ts` - Conservative runtime with policy enforcement
-  - [ ] `manifest.ts` - Plugin manifest validation utilities
-  - [ ] `spec.md` - Security model and constraints specification
-- [ ] `src/platform/durable/AgentDo.ts` - Durable Object orchestrator scaffold
-- [ ] Feature flag `PHASE5_ENABLE` in environment configuration
-- [ ] Audit hooks and redaction helpers in `AuditService`
+- [x] `src/platform/sandbox/` - Sandbox runtime implementation ✅
+  - [x] `runtime.ts` - Conservative runtime with policy enforcement ✅
+  - [x] `manifest.ts` - Plugin manifest validation utilities ✅
+  - [x] `spec.md` - Security model and constraints specification ✅
+- [x] `src/platform/durable/AgentDo.ts` - Durable Object orchestrator scaffold ✅
+- [x] Feature flag `PHASE5_ENABLE` in environment configuration ✅
+- [x] Audit hooks and redaction helpers in `AuditService` ✅
 
 ### Testing & CI
-- [ ] `.github/workflows/phase5-infra.yml` - CI job for Phase 5 validation
-- [ ] `tests/sandbox-runtime.spec.ts` - Unit tests for sandbox runtime
-- [ ] `tests/durable/sandbox-do.spec.ts` - DO orchestration tests
-- [ ] Security tests to prevent accidental enabling in production
+- [x] `.github/workflows/phase5-infra.yml` - CI job for Phase 5 validation ✅
+- [x] `tests/sandbox-runtime.spec.ts` - Unit tests for sandbox runtime ✅
+- [x] `tests/durable/sandbox-do.spec.ts` - DO orchestration tests ✅
+- [x] Security tests to prevent accidental enabling in production ✅
 
 ### Agent Planning
 - [ ] `src/agents/security-scan/` - Security Scan Agent skeleton
@@ -50,23 +50,23 @@ Phase 5 Planning: Advanced Agent Capabilities Foundation
 ## 4. Acceptance Criteria
 
 ### Security & Safety
-- [ ] Sandbox denies network and secret access by default
-- [ ] All plugin output is audited and sanitized before emission
-- [ ] `PHASE5_ENABLE` defaults to OFF with explicit enable requirement
-- [ ] Resource limits are enforced and configurable
-- [ ] Audit trail covers all plugin executions and state changes
+- [x] Sandbox denies network and secret access by default ✅
+- [x] All plugin output is audited and sanitized before emission ✅
+- [x] `PHASE5_ENABLE` defaults to OFF with explicit enable requirement ✅
+- [x] Resource limits are enforced and configurable ✅
+- [x] Audit trail covers all plugin executions and state changes ✅
 
 ### Infrastructure
-- [ ] Plugin manifest format defined and validated
-- [ ] Runtime API provides restricted capabilities only
-- [ ] Durable Object scaffold supports agent lifecycle management
-- [ ] CI gating prevents accidental production deployment
+- [x] Plugin manifest format defined and validated ✅
+- [x] Runtime API provides restricted capabilities only ✅
+- [x] Durable Object scaffold supports agent lifecycle management ✅
+- [x] CI gating prevents accidental production deployment ✅
 
 ### Testing & Quality
-- [ ] All new code passes lint, type-check, and test validation
-- [ ] CI job `phase5-infra.yml` runs successfully on all PRs
-- [ ] Security review checklist completed and signed off
-- [ ] Zero regressions in existing Phase 4 functionality
+- [x] All new code passes lint, type-check, and test validation ✅
+- [x] CI job `phase5-infra.yml` runs successfully on all PRs ✅
+- [x] Security review checklist completed and signed off
+- [x] Zero regressions in existing Phase 4 functionality ✅
 
 ### Documentation
 - [ ] All specifications documented and reviewed
@@ -138,17 +138,17 @@ Phase 5 Planning: Advanced Agent Capabilities Foundation
 
 ## Implementation Roadmap
 
-### Stage 1: Infrastructure Foundation (Current)
-- Sandbox specification and security model
-- Plugin manifest format definition
-- Feature gating implementation
-- CI workflow setup
+### Stage 1: Infrastructure Foundation (Current) ✅ COMPLETE
+- Sandbox specification and security model ✅
+- Plugin manifest format definition ✅
+- Feature gating implementation ✅
+- CI workflow setup ✅
 
-### Stage 2: Runtime Implementation
-- Sandbox runtime with policy enforcement
-- Durable Object orchestrator
-- Resource limits enforcement
-- Comprehensive testing
+### Stage 2: Runtime Implementation ✅ COMPLETE
+- Sandbox runtime with policy enforcement ✅
+- Durable Object orchestrator ✅
+- Resource limits enforcement ✅
+- Comprehensive testing ✅
 
 ### Stage 3: Agent Development
 - Code Generation Agent implementation
