@@ -2,8 +2,16 @@ name: Phase 5 Infra Validation
 
 on:
   pull_request:
-    branches: [ main, 'feature/*', 'release/*' ]
-    paths: [ 'src/**', 'tests/**', 'docs/**', '.github/workflows/**' ]
+    branches: 
+      - main
+      - 'feature/*'
+      - 'release/*'
+    paths: 
+      - 'src/**'
+      - 'tests/**'
+      - 'docs/**'
+      - '.github/workflows/**'
+  workflow_dispatch: {}
 
 jobs:
   validate:
@@ -24,5 +32,5 @@ jobs:
         run: npm test -- --runInBand
       - name: Sandbox smoke test
         run: npm test tests/sandbox.spec.ts -- --runInBand
-      - name: Stage 2: runtime & DO tests
+      - name: Stage 2 runtime & DO tests
         run: npm test tests/sandbox-runtime.spec.ts tests/durable/sandbox-do.spec.ts -- --runInBand

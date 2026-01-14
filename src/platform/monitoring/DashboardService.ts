@@ -221,11 +221,15 @@ export class DashboardService {
       providers.forEach((provider, index) => {
         const providerData: ChartDataPoint[] = timeSeries
           .filter(point => point.providerBreakdown?.[provider])
-          .map(point => ({
-            timestamp: point.timestamp,
-            label: this.formatTimeLabel(point.timestamp),
-            value: (point.providerBreakdown![provider].successRate || 0) * 100,
-          }));
+          .map(point => {
+            const pb = point.providerBreakdown;
+            const successRate = pb && pb[provider] && typeof pb[provider].successRate === 'number' ? pb[provider].successRate : 0;
+            return {
+              timestamp: point.timestamp,
+              label: this.formatTimeLabel(point.timestamp),
+              value: (successRate || 0) * 100,
+            };
+          });
 
         if (providerData.length > 0) {
           series.push({

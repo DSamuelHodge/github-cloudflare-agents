@@ -118,7 +118,12 @@ export class ResultAggregator {
       return null;
     }
 
-    const winnerResult = result.results.find(r => r.solutionId === result.winner!.solutionId);
+    const winnerId = result.winner?.solutionId;
+    if (!winnerId) {
+      return null;
+    }
+
+    const winnerResult = result.results.find(r => r.solutionId === winnerId);
     if (!winnerResult) {
       return null;
     }

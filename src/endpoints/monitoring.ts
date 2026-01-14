@@ -71,11 +71,13 @@ export async function handleAnalyticsRequest(
     const provider = url.searchParams.get('provider') as AIProvider | null;
 
     // Validate hours parameter
-    if (hoursParam && (isNaN(hours!) || hours! <= 0 || hours! > 168)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid hours parameter (must be 1-168)' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (hoursParam) {
+      if (typeof hours !== 'number' || isNaN(hours) || hours <= 0 || hours > 168) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid hours parameter (must be 1-168)' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const analytics = await analyticsService.getAnalytics(

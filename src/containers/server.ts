@@ -265,7 +265,13 @@ async function handleRequest(req: any, res: any) {
     if (!sseConnections.has(jobId)) {
       sseConnections.set(jobId, []);
     }
-    sseConnections.get(jobId)!.push(res);
+    const list = sseConnections.get(jobId);
+    if (list) {
+      list.push(res);
+    } else {
+      // Unexpected: initialize list defensively
+      sseConnections.set(jobId, [res]);
+    }
 
     console.log(`[SSE] Client connected for job ${jobId}`);
 

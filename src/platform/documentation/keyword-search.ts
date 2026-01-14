@@ -113,7 +113,9 @@ export class KeywordSearchService {
   private calculateIDF(term: string): number {
     // Check cache first
     if (this.idfCache.has(term)) {
-      return this.idfCache.get(term)!;
+      const cached = this.idfCache.get(term);
+      if (cached !== undefined) return cached;
+      // fallthrough: unexpected cache miss
     }
     
     // Count documents containing this term

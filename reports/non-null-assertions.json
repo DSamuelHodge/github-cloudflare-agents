@@ -1,0 +1,101 @@
+[
+  {
+    "path": "src/platform/streaming/StreamingService.ts",
+    "line": 150,
+    "snippet": "const jobStream = this.jobStreams.get(jobId)!;",
+    "enclosing": "subscribe/stream management",
+    "inferredType": "JobStream | undefined",
+    "remediationCategory": "map-get-postfix",
+    "riskScore": 2,
+    "priority": "medium",
+    "notes": "Guarded earlier with has(jobId) set; low likelihood of missing entry at runtime but keep check or narrow types to avoid assertion."
+  },
+  {
+    "path": "src/platform/parallel/ResultAggregator.ts",
+    "line": 121,
+    "snippet": "result.winner!.solutionId",
+    "enclosing": "determineRecommendation",
+    "inferredType": "Winner | undefined",
+    "remediationCategory": "post-check-assertion",
+    "riskScore": 1,
+    "priority": "low",
+    "notes": "Function returns early if !result.winner — assertion follows explicit guard (low risk)." 
+  },
+  {
+    "path": "src/platform/monitoring/DashboardService.ts",
+    "line": 227,
+    "snippet": "point.providerBreakdown![provider].successRate",
+    "enclosing": "build chart series",
+    "inferredType": "Record<string, ProviderStats> | undefined",
+    "remediationCategory": "conditional-filter-assertion",
+    "riskScore": 2,
+    "priority": "medium",
+    "notes": "Filtering and earlier checks present; safe but consider narrowing types when mapping."
+  },
+  {
+    "path": "src/platform/github/permissions.ts",
+    "line": 86,
+    "snippet": "return this.cache.get(cacheKey)!;",
+    "enclosing": "getPermissionLevel",
+    "inferredType": "GitHubPermissionLevel | undefined",
+    "remediationCategory": "cache-get-after-has",
+    "riskScore": 1,
+    "priority": "low",
+    "notes": "Has explicit cache.has check above; replaceable with non-asserting get after type refinement."
+  },
+  {
+    "path": "src/platform/documentation/keyword-search.ts",
+    "line": 116,
+    "snippet": "return this.idfCache.get(term)!;",
+    "enclosing": "calculateIDF",
+    "inferredType": "number | undefined",
+    "remediationCategory": "cache-get-after-has",
+    "riskScore": 1,
+    "priority": "low",
+    "notes": "Guarded by has(); low risk."
+  },
+  {
+    "path": "src/platform/documentation/indexer.ts",
+    "line": 205,
+    "snippet": "storeEmbedding(this.kvNamespace!, embedding)",
+    "enclosing": "indexChunks",
+    "inferredType": "KVNamespace | undefined",
+    "remediationCategory": "env-binding",
+    "riskScore": 5,
+    "priority": "high",
+    "notes": "Environment binding; high runtime risk if missing. Add explicit validation or fail-fast with descriptive error."
+  },
+  {
+    "path": "src/platform/ai/gateway-client.ts",
+    "line": 210,
+    "snippet": "const parts = Array.isArray(content?.parts) ? content!.parts : [];",
+    "enclosing": "parse Gemini candidates",
+    "inferredType": "{ parts?: unknown[] } | undefined",
+    "remediationCategory": "deserialization-guard",
+    "riskScore": 2,
+    "priority": "medium",
+    "notes": "Pattern checks content?.parts before using content!, safe but consider local narrow variable to avoid assertion."
+  },
+  {
+    "path": "src/endpoints/monitoring.ts",
+    "line": 74,
+    "snippet": "isNaN(hours!) || hours! <= 0 || hours! > 168",
+    "enclosing": "request parameter validation",
+    "inferredType": "number | undefined",
+    "remediationCategory": "post-parse-assertion",
+    "riskScore": 2,
+    "priority": "medium",
+    "notes": "hoursParam guard present; consider narrowing into a local `const h = hours!` after check."
+  },
+  {
+    "path": "src/containers/server.ts",
+    "line": 268,
+    "snippet": "sseConnections.get(jobId)!.push(res);",
+    "enclosing": "SSE connection registration",
+    "inferredType": "Array<Response> | undefined",
+    "remediationCategory": "map-get-postfix",
+    "riskScore": 2,
+    "priority": "medium",
+    "notes": "sseConnections is initialized immediately above when missing; low risk."
+  }
+]
