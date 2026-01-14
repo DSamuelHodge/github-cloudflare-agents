@@ -3,11 +3,14 @@
  */
 
 import type { IAgent, AgentContext, AgentResult, AgentRegistration } from '../types/agents';
+import { AgentExecutionContext } from './base/AgentContext';
 import { IssueResponderAgent } from './issue-responder/agent';
 import { ContainerTestAgent } from './container-test/agent';
 import { PRAgent } from './pr-agent/agent';
 import { TriagingAgent } from './triaging/agent';
 import { PRReviewAgent } from './pr-review/agent';
+import { SecurityScanAgent } from './security-scan/agent';
+import { CodeGenerationAgent } from './code-generation/agent';
 
 export class AgentRegistry {
   private agents: Map<string, AgentRegistration> = new Map();
@@ -30,6 +33,10 @@ export class AgentRegistry {
     
         // Register PRReviewAgent (Phase 3.5)
         this.register(new PRReviewAgent());
+    // Register SecurityScanAgent (Phase 5)
+    this.register(new SecurityScanAgent({ enabled: true }));
+    // Register CodeGenerationAgent (Phase 5)
+    this.register(new CodeGenerationAgent({ enabled: true }));
   }
   
   /**
@@ -132,6 +139,11 @@ export class AgentRegistry {
     
     for (const agent of handlers) {
       try {
+        // Assign role for this specific agent
+        if (context instanceof AgentExecutionContext) {
+          context.assignRoleForAgent(agent.name);
+        }
+        
         context.logger.info(`Executing agent: ${agent.name}`);
         const result = await agent.run(context);
         results.push(result);

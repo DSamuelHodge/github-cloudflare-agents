@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting (strict)
+      run: npm run lint:strict
+
+    - name: Run TypeScript type checking
+      run: npm run type-check
+
+    - name: Run tests
+      run: npm test
+
+    - name: Validate no 'any' types
+      run: |
+        if grep -r "any" src/ --include="*.ts" | grep -v "src/types/env.ts" | grep -v "src/types/github" | grep -v "src/types/repository"; then
+          echo "Found 'any' types in source code (excluding allowed files)"
+          exit 1
+        else
+          echo "No forbidden 'any' types found"
+        fi
+
+  validate-prompts:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Validate prompt/role/tool consistency
+      run: |
+        # Basic validation that roles are defined and referenced properly
+        echo "Validating role schema exists..."
+        if [ ! -f "src/agents/roles/roles.schema.ts" ]; then
+          echo "Role schema file not found"
+          exit 1
+        fi
+
+        # Check that roles are exported
+        if ! grep -q "export.*Roles" src/agents/roles/roles.schema.ts; then
+          echo "Roles not properly exported"
+          exit 1
+        fi
+
+        echo "Role schema validation passed"
+
+    - name: Validate tool registry consistency
+      run: |
+        echo "Validating tool registry..."
+        # Check that tool requests are properly formatted
+        if grep -r "requestTool" src/ --include="*.ts" | grep -v "requestTool(" | grep -v "requestTool ("; then
+          echo "Found malformed tool requests"
+          exit 1
+        fi
+        echo "Tool registry validation passed"

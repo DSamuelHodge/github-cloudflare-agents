@@ -160,7 +160,49 @@ export abstract class BaseAgent implements IAgent {
       data,
     };
   }
-  
+
+  /**
+   * Runtime tool access helper
+   * Ensures the provided context role is permitted to use the requested tool and the tool is registered
+   */
+  protected async requestTool(context: AgentContext, toolId: string) {
+    // Dynamic import to avoid module resolution issues in ESM/TS test environment
+    const tools = await import('../../platform/tools');
+    const { enforceToolPrivilege } = await import('../../platform/security/privilege');
+    const globalToolRegistry = tools.globalToolRegistry as import('../../platform/tools').ToolRegistry;
+
+    const meta = globalToolRegistry.get(toolId);
+    if (!meta) {
+      throw new Error(`Tool '${toolId}' is not registered`);
+    }
+
+    const role = context.role;
+    if (!role) {
+      throw new Error(`Agent context missing role; cannot authorize tool '${toolId}'`);
+    }
+
+    enforceToolPrivilege(role, toolId);
+
+    // Record audit event for tool access
+    if (context.audit) {
+      await context.audit.record({
+        timestamp: new Date().toISOString(),
+        eventType: this.name,
+        action: 'tool.request',
+        message: `Tool '${toolId}' requested by agent`,
+        metadata: {
+          toolId,
+          role: role.name,
+          agent: this.name,
+          repository: context.repository?.fullName,
+          requestId: context.requestId,
+        },
+      });
+    }
+
+    return meta as import('../../platform/tools').ToolMetadata;
+  }
+
   /**
    * Helper: Create an error result
    */
