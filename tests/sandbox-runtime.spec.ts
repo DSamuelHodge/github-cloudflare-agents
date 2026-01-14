@@ -59,4 +59,21 @@ describe('SandboxRuntime', () => {
     const events = audit.list();
     expect(events.some((e) => e.action === 'execute.succeeded')).toBe(true);
   });
+
+  it('enforces resource limits (smoke test)', async () => {
+    const auditLowMem = new AuditService();
+    const runtimeLowMem = new SandboxRuntime({ memoryLimitMb: 8 }, auditLowMem);
+    const entry = async () => 'ok';
+    const resLowMem = await runtimeLowMem.execute(manifestNoNetwork as any, entry as any);
+    expect(resLowMem.success).toBe(false);
+    expect(resLowMem.error).toContain('memory limit too low');
+    expect(auditLowMem.list().some(e => e.action === 'execute.rejected' && e.message.includes('memory limit too low'))).toBe(true);
+
+    const auditBadCpu = new AuditService();
+    const runtimeBadCpu = new SandboxRuntime({ cpuLimitPct: 5 }, auditBadCpu);
+    const resBadCpu = await runtimeBadCpu.execute(manifestNoNetwork as any, entry as any);
+    expect(resBadCpu.success).toBe(false);
+    expect(resBadCpu.error).toContain('cpu limit out of range');
+    expect(auditBadCpu.list().some(e => e.action === 'execute.rejected' && e.message.includes('cpu limit out of range'))).toBe(true);
+  });
 });

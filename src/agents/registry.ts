@@ -8,6 +8,8 @@ import { ContainerTestAgent } from './container-test/agent';
 import { PRAgent } from './pr-agent/agent';
 import { TriagingAgent } from './triaging/agent';
 import { PRReviewAgent } from './pr-review/agent';
+import { SecurityScanAgent } from './security-scan/agent';
+import { CodeGenerationAgent } from './code-generation/agent';
 
 export class AgentRegistry {
   private agents: Map<string, AgentRegistration> = new Map();
@@ -30,6 +32,10 @@ export class AgentRegistry {
     
         // Register PRReviewAgent (Phase 3.5)
         this.register(new PRReviewAgent());
+    // Register SecurityScanAgent (Phase 5)
+    this.register(new SecurityScanAgent({ name: 'SecurityScanAgent', version: '1.0.0', description: 'Automated security vulnerability scanning for dependencies and code patterns' }));
+    // Register CodeGenerationAgent (Phase 5)
+    this.register(new CodeGenerationAgent({ name: 'CodeGenerationAgent', version: '1.0.0', description: 'Generate features from NL specs using Cloudflare Containers' }));
   }
   
   /**

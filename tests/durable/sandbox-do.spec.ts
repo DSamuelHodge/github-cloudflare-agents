@@ -1,29 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import { SandboxDo } from '../../src/platform/durable/SandboxDo';
-import { AuditService } from '../../src/platform/audit/AuditService';
-import { PluginCapability } from '../../src/platform/plugin-sdk/types';
+import { AgentDo, AgentState } from '../../src/platform/durable/AgentDo';
 
-const manifest = {
-  name: 'do-plugin',
-  version: '1.0.0',
-  capabilities: [PluginCapability.FILESYSTEM],
-};
+describe('AgentDo Durable Object', () => {
+  it('initializes and updates heartbeat', async () => {
+    const state: AgentState = { id: 'agent-1', runningJobs: 0 };
+    const doInstance = new AgentDo(state);
+    expect(doInstance.getState().id).toBe('agent-1');
+    expect(doInstance.getState().lastHeartbeat).toBeUndefined();
+    await doInstance.heartbeat();
+    expect(typeof doInstance.getState().lastHeartbeat).toBe('string');
+    expect(doInstance.getAuditTrail().some(e => e.action === 'heartbeat')).toBe(true);
+  });
 
-describe('SandboxDo', () => {
-  it('runs plugin and records DO state and audit events', async () => {
-    const audit = new AuditService();
-    const doState = { id: 's1', runningJobs: 0 };
-    const sd = new SandboxDo(doState as any, audit);
-
-    const entry = async () => ({ ok: true });
-
-    const res = await sd.runPlugin(manifest as any, entry as any);
-    expect(res.success).toBe(true);
-    expect(sd.getState().lastRun).toBeDefined();
-    expect(sd.getState().runningJobs).toBe(0);
-
-    const events = audit.list();
-    // expect at least one orchestration event
-    expect(events.some((e) => e.action === 'do.run')).toBe(true);
+  it('supports start/stop lifecycle and records audit', async () => {
+    const state: AgentState = { id: 'agent-2', runningJobs: 0 };
+    const doInstance = new AgentDo(state);
+    expect(doInstance.getState().status).toBe('stopped');
+    await doInstance.start();
+    expect(doInstance.getState().status).toBe('running');
+    await doInstance.stop();
+    expect(doInstance.getState().status).toBe('stopped');
+    const actions = doInstance.getAuditTrail().map(e => e.action);
+    expect(actions).toContain('start');
+    expect(actions).toContain('stop');
   });
 });

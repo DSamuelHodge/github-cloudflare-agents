@@ -5,6 +5,8 @@ export interface SandboxOptions {
   timeoutMs?: number;
   allowedHosts?: string[]; // allowlist for network
   denyNetwork?: boolean;
+  memoryLimitMb?: number;
+  cpuLimitPct?: number;
 }
 
 export interface ExecutionResult {

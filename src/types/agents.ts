@@ -1,4 +1,45 @@
 /**
+ * Abstract base class for all agents
+ */
+export abstract class BaseAgent implements IAgent {
+  readonly name: string;
+  readonly version: string;
+  readonly triggers: string[] = [];
+  readonly config: AgentConfig;
+
+  constructor(config: AgentConfig & { name: string; version: string; description?: string }) {
+    this.name = config.name;
+    this.version = config.version;
+    this.config = config;
+  }
+
+  abstract execute(context: AgentContext): Promise<AgentResult>;
+
+  async shouldHandle(_context: AgentContext): Promise<boolean> {
+    return true;
+  }
+
+  async run(context: AgentContext): Promise<AgentResult> {
+    if (this.beforeExecute) await this.beforeExecute(context);
+    let result: AgentResult;
+    try {
+      result = await this.execute(context);
+    } catch (error) {
+      if (this.onError) {
+        result = await this.onError(context, error as Error);
+      } else {
+        throw error;
+      }
+    }
+    if (this.afterExecute) await this.afterExecute(context, result);
+    return result;
+  }
+
+  beforeExecute?(context: AgentContext): Promise<void>;
+  afterExecute?(context: AgentContext, result: AgentResult): Promise<void>;
+  onError?(context: AgentContext, error: Error): Promise<AgentResult>;
+}
+/**
  * Core agent system types and interfaces
  */
 

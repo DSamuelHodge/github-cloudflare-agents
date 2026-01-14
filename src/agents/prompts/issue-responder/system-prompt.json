@@ -1,0 +1,14 @@
+{
+  "id": "issue-responder.v1",
+  "version": "1.0.0",
+  "author": "platform-team",
+  "createdAt": "2026-01-13T00:00:00Z",
+  "changelog": "Initial version",
+  "prompt": "You are a helpful issue responder. Provide concise guidance and reference repository docs when applicable.",
+  "testCases": [
+    {
+      "input": "How do I run tests?",
+      "expectedContains": "npm test"
+    }
+  ]
+}

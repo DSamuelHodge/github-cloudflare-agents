@@ -40,9 +40,18 @@ export class SandboxRuntime {
 
     // enforce timeout
     const timeoutMs = this.opts.timeoutMs ?? 2000;
+    // Simulate resource enforcement
+    if (this.opts.memoryLimitMb && this.opts.memoryLimitMb < 32) {
+      await this.audit?.record({ timestamp: new Date().toISOString(), plugin: manifest.name, action: 'execute.rejected', message: 'memory limit too low' });
+      return { success: false, error: 'memory limit too low', durationMs: Date.now() - start };
+    }
+    if (this.opts.cpuLimitPct && (this.opts.cpuLimitPct < 10 || this.opts.cpuLimitPct > 100)) {
+      await this.audit?.record({ timestamp: new Date().toISOString(), plugin: manifest.name, action: 'execute.rejected', message: 'cpu limit out of range' });
+      return { success: false, error: 'cpu limit out of range', durationMs: Date.now() - start };
+    }
     const runPromise = (async () => {
       try {
-        await this.audit?.record({ timestamp: new Date().toISOString(), plugin: manifest.name, action: 'execute.started', message: 'execution started' });
+        await this.audit?.record({ timestamp: new Date().toISOString(), plugin: manifest.name, action: 'execute.started', message: `execution started (mem=${this.opts.memoryLimitMb ?? 128}MB cpu=${this.opts.cpuLimitPct ?? 50}%)` });
         const result = await Promise.resolve(entry(api, input));
         await this.audit?.record({ timestamp: new Date().toISOString(), plugin: manifest.name, action: 'execute.succeeded', message: 'execution succeeded' });
         return { success: true, output: result, durationMs: Date.now() - start } as ExecutionResult;
@@ -57,4 +66,6 @@ export class SandboxRuntime {
 
     return Promise.race([runPromise, timeoutPromise]);
   }
-}
+  }
+
+  export type { PluginManifest };
