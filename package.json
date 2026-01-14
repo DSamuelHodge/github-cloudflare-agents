@@ -10,7 +10,7 @@
     "test": "vitest run",
     "type-check": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
-    "lint:strict": "eslint src/**/*.ts --max-warnings 0",
+    "lint:strict": "eslint --max-warnings 0",
     "lint:fix": "eslint src/**/*.ts --fix",
     "setup-secrets": "npm run setup:github-token && npm run setup:gemini-key",
     "setup:github-token": "wrangler secret put GITHUB_TOKEN",
