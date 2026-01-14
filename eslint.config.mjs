@@ -3,7 +3,6 @@ import tsparser from '@typescript-eslint/parser';
 
 export default [
   {
-    files: ['src/**/*.ts'],
     ignores: [
       'tests/**',
       '**/*.test.ts',
@@ -15,6 +14,9 @@ export default [
       'src/containers/startup.sh',
       'src/containers/test-runner.sh',
     ],
+  },
+  {
+    files: ['src/**/*.ts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
