@@ -3,6 +3,11 @@
 ## Purpose
 Defines the requirements, deliverables, and validation criteria for each stage of Phase 5 execution. Ensures all refactoring and feature work is auditable, testable, and aligned with architecture standards.
 
+## Current Status
+- **Phase 5 Planning Contract**: `PHASE5_PLANNING_STAGE_EXECUTION_CONTRACT.md` (Active)
+- **Infrastructure Foundation**: Partially Complete (Sandbox spec, CI workflow, basic scaffolding)
+- **Next Stage**: Runtime Implementation (Sandbox runtime with policy enforcement)
+
 ---
 
 ## Stage Contract Template
@@ -30,39 +35,22 @@ Defines the requirements, deliverables, and validation criteria for each stage o
 
 ---
 
-## Example: Stage Contract (Type Safety Hardening)
+## Active Stage Contracts
 
-### 1. Stage Name
-Type Safety Hardening
+### Phase 5 Planning (Current)
+**Document**: `PHASE5_PLANNING_STAGE_EXECUTION_CONTRACT.md`
+**Status**: Active
+**Objectives**: Define Phase 5 scope, establish security boundaries, create infrastructure foundations
+**Key Deliverables**:
+- Sandbox runtime specification and security model
+- Plugin manifest format and validation utilities
+- Feature gating (`PHASE5_ENABLE`) and CI validation
+- Agent planning for Code Generation and Security Scan agents
 
-### 2. Objectives
-- Remove all `any` types from codebase
-- Enforce strict ESLint rules
-- Validate type safety with full test suite
-
-### 3. Deliverables
-- Refactored source files (list)
-- Updated ESLint config
-- Passing tests
-- Documentation update
-
-### 4. Acceptance Criteria
-- Zero `any` types (lint error)
-- All tests pass
-- Code review approved
-
-### 5. Audit & Review Steps
-- Run `npm run lint:strict`
-- Run `npm test`
-- Peer review
-
-### 6. Rollback Plan
-- Revert to previous commit/tag
-
-### 7. Versioning & Traceability
-- Commit hash
-- Changelog entry
-- Tag: `phase5-type-safety`
+### Future Stage Contracts (Planned)
+- **Stage 2**: Runtime Implementation - Sandbox runtime with policy enforcement
+- **Stage 3**: Agent Development - Code Generation and Security Scan agent implementation
+- **Stage 4**: Production Deployment - Security review and production rollout
 
 ---
 
