@@ -5,6 +5,9 @@
 import type { AgentContext, AgentLogger, AgentMetrics, AgentEnv } from '../../types/agents';
 import type { GitHubEvent } from '../../types/events';
 import type { RepositoryContext } from '../../types/repository';
+import type { AgentRole } from '../roles/roles.schema';
+import { globalRoleAssignmentService } from '../../platform/security/RoleAssignmentService';
+import { AuditService } from '../../platform/audit/AuditService';
 
 export class AgentExecutionContext implements AgentContext {
   requestId: string;
@@ -13,8 +16,10 @@ export class AgentExecutionContext implements AgentContext {
   payload: unknown;
   repository?: RepositoryContext;
   env: AgentEnv;
+  role?: AgentRole;
   logger: AgentLogger;
   metrics: AgentMetrics;
+  audit?: AuditService;
   
   private _metadata: Map<string, unknown> = new Map();
   
@@ -34,6 +39,19 @@ export class AgentExecutionContext implements AgentContext {
     this.env = env;
     this.logger = logger;
     this.metrics = metrics;
+    this.audit = env.AUDIT_KV ? new AuditService({ kv: env.AUDIT_KV, persistToKV: true }) : undefined;
+  }
+  
+  /**
+   * Assign role for a specific agent
+   */
+  assignRoleForAgent(agentName: string): void {
+    this.role = globalRoleAssignmentService.assignRole(agentName, this.repository);
+    this.logger.debug('Role assigned to agent', {
+      agent: agentName,
+      role: this.role?.name,
+      repository: this.repository?.fullName,
+    });
   }
   
   /**

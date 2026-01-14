@@ -44,6 +44,7 @@ export abstract class BaseAgent implements IAgent {
  */
 
 import type { RepositoryContext } from './repository';
+import type { AgentRole } from '../agents/roles/roles.schema';
 
 /**
  * Agent execution context passed to all agents
@@ -61,10 +62,14 @@ export interface AgentContext {
   repository?: RepositoryContext;
   /** Environment variables and secrets */
   env: AgentEnv;
+  /** Optional: Agent role (for privilege enforcement) */
+  role?: AgentRole;
   /** Logger instance */
   logger: AgentLogger;
   /** Metrics collector */
   metrics: AgentMetrics;
+  /** Audit service for security events */
+  audit?: import('../platform/audit/AuditService').AuditService;
 }
 
 /**
@@ -91,6 +96,9 @@ export interface AgentEnv {
   KV?: KVNamespace;
   R2?: R2Bucket;
   CONTAINERS?: Fetcher; // Cloudflare Containers binding
+  
+  // Audit service (Phase 4.9)
+  AUDIT_KV?: KVNamespace;
 }
 
 /**

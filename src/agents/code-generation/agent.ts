@@ -1,5 +1,5 @@
-import { BaseAgent, AgentConfig, AgentContext } from '../../types/agents';
-import { logger } from '../../utils/logger';
+import { BaseAgent } from '../base/BaseAgent';
+import type { AgentContext, AgentResult, AgentConfig } from '../../types/agents';
 
 export interface CodeGenRequest {
   specification: string;
@@ -12,15 +12,23 @@ export interface CodeGenResult {
 }
 
 export class CodeGenerationAgent extends BaseAgent {
+  readonly name = 'code-generation';
+  readonly version = '1.0.0';
+  readonly triggers = ['issues', 'pull_request']; // Assuming it can be triggered on issues or PRs
+
   constructor(config: AgentConfig) {
     super(config);
   }
 
-  async run(context: AgentContext): Promise<CodeGenResult> {
+  async execute(_context: AgentContext): Promise<AgentResult> {
     // Placeholder: Implement code generation logic using Cloudflare Containers
     return {
-      files: [],
-      logs: ['Code generation not yet implemented'],
+      success: true,
+      agentName: this.name,
+      data: {
+        files: [],
+        logs: ['Code generation not yet implemented'],
+      },
     };
   }
 }

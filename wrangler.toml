@@ -69,6 +69,11 @@ id = "1241fb8495cf4cd0b5f661beef6f41f0"
 binding = "KV"
 id = "c57bc9e1db3e4e1b8fa80ac05daa4c71"
 
+# KV namespace for audit logging (Phase 4.9)
+[[kv_namespaces]]
+binding = "AUDIT_KV"
+id = "28fb6c83df7144169e7b498d6a5d69f5"
+
 # Observability
 [observability]
 enabled = true

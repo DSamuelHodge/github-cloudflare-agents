@@ -1,5 +1,5 @@
-import { BaseAgent, AgentConfig, AgentContext } from '../../types/agents';
-import { logger } from '../../utils/logger';
+import { BaseAgent } from '../base/BaseAgent';
+import type { AgentContext, AgentResult, AgentConfig } from '../../types/agents';
 
 export interface SnykVulnerability {
   id: string;
@@ -23,17 +23,25 @@ export interface SecurityScanResult {
 }
 
 export class SecurityScanAgent extends BaseAgent {
+  readonly name = 'security-scan';
+  readonly version = '1.0.0';
+  readonly triggers = ['issues', 'pull_request']; // Assuming it can be triggered on issues or PRs
+
   constructor(config: AgentConfig) {
     super(config);
   }
 
-  async run(context: AgentContext): Promise<SecurityScanResult> {
+  async execute(context: AgentContext): Promise<AgentResult> {
     // Aggregate results from Snyk and CodeRabbit
     const snykVulnerabilities = await this.scanWithSnyk(context);
     const codeRabbitFindings = await this.scanWithCodeRabbit(context);
     return {
-      snykVulnerabilities,
-      codeRabbitFindings,
+      success: true,
+      agentName: this.name,
+      data: {
+        snykVulnerabilities,
+        codeRabbitFindings,
+      },
     };
   }
 
