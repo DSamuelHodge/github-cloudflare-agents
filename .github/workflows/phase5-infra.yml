@@ -29,8 +29,8 @@ jobs:
       - name: Lint (strict) - Phase5 files only
         run: npx eslint "src/platform/**" "src/types/**" --max-warnings 0
       - name: Run tests
-        run: npm test -- --runInBand
+        run: npm test
       - name: Sandbox smoke test
-        run: npm test tests/sandbox.spec.ts -- --runInBand
+        run: npm test tests/sandbox.spec.ts
       - name: Stage 2 runtime & DO tests
-        run: npm test tests/sandbox-runtime.spec.ts tests/durable/sandbox-do.spec.ts -- --runInBand
+        run: npm test tests/sandbox-runtime.spec.ts tests/durable/sandbox-do.spec.ts
